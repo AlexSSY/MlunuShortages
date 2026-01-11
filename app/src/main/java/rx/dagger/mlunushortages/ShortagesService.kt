@@ -81,7 +81,7 @@ class ShortagesService {
                     3 -> State.YELLOW
                     else -> throw InvalidHtmlForParsing("Failed to parse shortage status")
                 }
-                slots.addLast(
+                slots.add(
                     Slot(time, state, counter)
                 )
                 counter++
