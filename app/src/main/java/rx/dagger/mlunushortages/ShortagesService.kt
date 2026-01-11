@@ -13,7 +13,7 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
 class ShortagesService {
-    private val url = ""
+    private val url = "https://www.poe.pl.ua/customs/dynamicgpv-info.php"
 
     suspend fun getShortages(): Shortages =
         withContext(Dispatchers.IO) {
@@ -45,6 +45,53 @@ class ShortagesService {
     }
 
     private fun parseSlotsFromDocument(document: Document): List<Slot> {
+        val slots = mutableListOf<Slot>()
+        val dateNumbers = mutableMapOf<LocalDateTime, List<Int>>()
+        val gpvDivs = document.select(".gpvinfodetail")
+
+        for (gpvDiv in gpvDivs) {
+            val dateElement = gpvDiv.selectFirst("b")
+            if (dateElement == null) {
+                throw InvalidHtmlForParsing("Failed to parse dateString")
+            }
+            val dateString = dateElement.text()
+            val date = parseUaDate(dateString)
+            val tr = gpvDiv.selectFirst(".turnoff-scheduleui-table > tbody:nth-child(2) > tr:nth-child(2)")
+            if (tr == null) {
+                throw InvalidHtmlForParsing("Failed to parse tr")
+            }
+            val numbers = try {
+                tr.select("""td[class^="light_"]""").map { td ->
+                    val firstClass = td.className().split(" ").first()
+                    firstClass.split("light_").last().toInt()
+                }
+            } catch (e: NoSuchElementException) {
+                throw InvalidHtmlForParsing("Failed to parse numbers")
+            }
+            dateNumbers[date] = numbers
+        }
+
+        var counter = 0
+        for((date, numbers) in dateNumbers) {
+            numbers.forEachIndexed { idx, number ->
+                val time = date.plusSeconds(idx.toLong() * 30 * 60)
+                val state = when (number) {
+                    1 -> State.GREEN
+                    2 -> State.RED
+                    3 -> State.YELLOW
+                    else -> throw InvalidHtmlForParsing("Failed to parse shortage status")
+                }
+                slots.addLast(
+                    Slot(time, state, counter)
+                )
+                counter++
+            }
+        }
+
+        return slots
+    }
+
+    fun parseUaDate(uaDateString: String): LocalDateTime {
         val months = hashMapOf(
             "січня" to 1,
             "лютого" to 2,
@@ -60,9 +107,15 @@ class ShortagesService {
             "грудня" to 12,
         )
 
-//        val headings = document.select("h1")
-//        val data = headings.map { it.text() }
-
-        return emptyList()
+        val (dayString, monthName, yearString, _) = uaDateString.split(" ")
+        val day = dayString.toInt()
+        val month = months[monthName] ?: 1
+        val year = yearString.toInt()
+        return LocalDateTime.of(
+            year,
+            month,
+            day,
+            0, 0, 0
+        )
     }
 }
