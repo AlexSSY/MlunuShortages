@@ -24,7 +24,12 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -34,8 +39,13 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.delay
 import rx.dagger.mlunushortages.ui.theme.MlunuShortagesTheme
+import java.time.Duration
+import java.time.LocalDateTime
 import java.time.LocalTime
+import kotlin.concurrent.timer
+import kotlin.math.max
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -47,7 +57,7 @@ class MainActivity : ComponentActivity() {
             val shortages = viewModel.shortagesStateFlowSafe.collectAsState()
             val periodWithoutElectricity =
                 viewModel.periodWithoutElectricityFlowSafe.collectAsState()
-            val timerValue = viewModel.timerValueFlowSafe.collectAsState()
+            val timerState = viewModel.timerStateFlowSafe.collectAsState()
 
             viewModel.update()
 
@@ -60,7 +70,7 @@ class MainActivity : ComponentActivity() {
                         Row() {
                             TimerWidget(
                                 modifier = Modifier.fillMaxWidth(),
-                                timerValue = timerValue.value
+                                timerState = timerState.value
                             )
                         }
                         Row() {
@@ -81,7 +91,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun TimerWidget(modifier: Modifier, timerValue: LocalTime) {
+fun TimerWidget(modifier: Modifier, timerState: TimerState) {
     val shape = RoundedCornerShape(8.dp)
 
     Column(
@@ -119,12 +129,33 @@ fun TimerWidget(modifier: Modifier, timerValue: LocalTime) {
             Column(
                 modifier = Modifier.wrapContentWidth()
             ) {
+                var now by remember { mutableStateOf(LocalDateTime.now()) }
+
+                LaunchedEffect(timerState.timeRemaining) {
+                    while (timerState.timeRemaining != null) {
+                        now = LocalDateTime.now()
+                        delay(1000L)
+                    }
+                }
+
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    NumberBox(value = timerValue.hour, label = "ЧАС")
-                    NumberBox(value = timerValue.minute, label = "МИН")
-                    NumberBox(value = timerValue.second, label = "СЕК")
+                    if (timerState.timeRemaining != null) {
+                        val distance = Duration.between(now, timerState.timeRemaining)
+
+                        val totalSeconds = max(0, distance.seconds)
+
+                        val hours = totalSeconds / 3600
+                        val minutes = (totalSeconds % 3600) / 60
+                        val seconds = totalSeconds % 60
+
+                        NumberBox(value = hours, label = "ЧАС")
+                        NumberBox(value = minutes, label = "МИН")
+                        NumberBox(value = seconds, label = "СЕК")
+                    } else {
+                        Text("Нет данных")
+                    }
                 }
             }
         }
@@ -132,7 +163,7 @@ fun TimerWidget(modifier: Modifier, timerValue: LocalTime) {
 }
 
 @Composable
-fun NumberBox(value: Int, label: String) {
+fun NumberBox(value: Long, label: String) {
     Column(
         modifier = Modifier
             .background(

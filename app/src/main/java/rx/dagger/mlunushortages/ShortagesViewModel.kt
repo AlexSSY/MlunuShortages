@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.time.Duration
 import java.time.LocalDateTime
 import java.time.LocalTime
 import kotlin.concurrent.timer
@@ -21,8 +22,8 @@ class ShortagesViewModel: ViewModel() {
     private val periodsWithoutElectricityFlow = MutableStateFlow<List<PeriodWithoutElectricity>>(emptyList())
     val periodWithoutElectricityFlowSafe = periodsWithoutElectricityFlow.asStateFlow()
 
-    private val timerValueFlow = MutableStateFlow<LocalTime>(LocalTime.of(0, 0, 0))
-    val timerValueFlowSafe = timerValueFlow.asStateFlow()
+    private val timerStateFlow = MutableStateFlow<TimerState>(TimerState(true))
+    val timerStateFlowSafe = timerStateFlow.asStateFlow()
 
     fun update() {
         viewModelScope.launch {
@@ -33,7 +34,7 @@ class ShortagesViewModel: ViewModel() {
                 periodsWithoutElectricityFlow.value = calculatePeriodsWithoutElectricity(shortages)
                 val currentTimerState =
                     calculateCurrentTimerState(periodsWithoutElectricityFlow.value)
-                timerValueFlow.value = currentTimerState.timeRemaining
+                timerStateFlow.value = currentTimerState
             } finally {
                 loadingStateFlow.value = false
             }
@@ -41,15 +42,22 @@ class ShortagesViewModel: ViewModel() {
     }
 
     private fun calculateCurrentTimerState(periods: List<PeriodWithoutElectricity>): TimerState {
-        var inShortage = false
+        val now = LocalDateTime.now()
 
         for (period in periods) {
-            inShortage = period.contains(LocalDateTime.now())
+            if (period.contains(now)) {
+                return TimerState(
+                    isElectricityAvailable = false,
+                    timeRemaining = period.to
+                )
+            }
         }
+        val actualPeriods = periods.filter { it.from > now }
+        val nearestPeriod = actualPeriods.minByOrNull { Duration.between(now, it.from) }
 
         return TimerState(
-            true,
-            LocalTime.of(1, 35, 40)
+            isElectricityAvailable = true,
+            timeRemaining = nearestPeriod?.from
         )
     }
 
@@ -62,7 +70,7 @@ class ShortagesViewModel: ViewModel() {
                 from = slot
                 continue
             }
-            if (slot.state == State.YELLOW && from != null) {
+            if ((slot.state == State.YELLOW || slot.state == State.GREEN) && from != null) {
                 val period = PeriodWithoutElectricity(from.time, slot.time)
                 result.add(period)
                 from = null
