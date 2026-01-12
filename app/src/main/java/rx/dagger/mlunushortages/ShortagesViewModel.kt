@@ -5,6 +5,9 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.time.LocalDateTime
+import java.time.LocalTime
+import kotlin.concurrent.timer
 
 class ShortagesViewModel: ViewModel() {
     private val shortagesStateFlow = MutableStateFlow<Shortages?>(null)
@@ -18,14 +21,36 @@ class ShortagesViewModel: ViewModel() {
     private val periodsWithoutElectricityFlow = MutableStateFlow<List<PeriodWithoutElectricity>>(emptyList())
     val periodWithoutElectricityFlowSafe = periodsWithoutElectricityFlow.asStateFlow()
 
+    private val timerValueFlow = MutableStateFlow<LocalTime>(LocalTime.of(0, 0, 0))
+    val timerValueFlowSafe = timerValueFlow.asStateFlow()
+
     fun update() {
         viewModelScope.launch {
             loadingStateFlow.value = true
-            val shortages = shortagesService.getShortages()
-            shortagesStateFlow.value = shortages
-            periodsWithoutElectricityFlow.value = calculatePeriodsWithoutElectricity(shortages)
-            loadingStateFlow.value = false
+            try {
+                val shortages = shortagesService.getShortages()
+                shortagesStateFlow.value = shortages
+                periodsWithoutElectricityFlow.value = calculatePeriodsWithoutElectricity(shortages)
+                val currentTimerState =
+                    calculateCurrentTimerState(periodsWithoutElectricityFlow.value)
+                timerValueFlow.value = currentTimerState.timeRemaining
+            } finally {
+                loadingStateFlow.value = false
+            }
         }
+    }
+
+    private fun calculateCurrentTimerState(periods: List<PeriodWithoutElectricity>): TimerState {
+        var inShortage = false
+
+        for (period in periods) {
+            inShortage = period.contains(LocalDateTime.now())
+        }
+
+        return TimerState(
+            true,
+            LocalTime.of(1, 35, 40)
+        )
     }
 
     private fun calculatePeriodsWithoutElectricity(shortages: Shortages): List<PeriodWithoutElectricity> {

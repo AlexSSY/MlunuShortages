@@ -1,6 +1,7 @@
 package rx.dagger.mlunushortages
 
 import java.time.LocalDateTime
+import java.time.LocalTime
 
 data class PeriodWithoutElectricity(
     val from: LocalDateTime,
@@ -15,6 +16,11 @@ data class PeriodWithoutElectricity(
             2 -> "after tomorrow"
             else -> "after tomorrow"
         }
-        return "f(${from.hour}:${from.minute}) \t\t t(${to.hour}:${to.minute}) $suffix"
+        val prefix = if (now < to && from < now) "-> " else ""
+        return "${prefix}f(${from.hour}:${from.minute}) \t\t t(${to.hour}:${to.minute}) $suffix"
+    }
+
+    fun contains(localDateTime: LocalDateTime): Boolean {
+        return localDateTime < to && from < localDateTime
     }
 }
