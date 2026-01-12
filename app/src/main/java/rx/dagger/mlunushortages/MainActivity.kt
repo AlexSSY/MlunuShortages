@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -99,7 +100,7 @@ fun TimerWidget(modifier: Modifier, timerState: TimerState) {
             .padding(8.dp)
             .border(
                 width = 1.dp,
-                color = Color(0xffdddddd),
+                color = MaterialTheme.colorScheme.surfaceContainer,
                 shape = shape
             )
             .background(
@@ -113,16 +114,23 @@ fun TimerWidget(modifier: Modifier, timerState: TimerState) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
+                val isElectricity = timerState.isElectricityAvailable
+
                 Row() {
                     Text(
-                        text = "Свет должен быть",
-                        fontSize = 12.sp
+                        text = if (isElectricity) "Свет должен быть" else "Света не должно быть",
+                        fontSize = 12.sp,
+                        lineHeight = 1.sp
                     )
                 }
                 Row() {
-                    Text("Отключение света через:")
+                    Text(
+                        text = if (isElectricity) "Отключат через:" else "Включат через:",
+                        lineHeight = 1.sp
+                    )
                 }
             }
 
@@ -167,7 +175,7 @@ fun NumberBox(value: Long, label: String) {
     Column(
         modifier = Modifier
             .background(
-                color = Color(0xfff0ebe2),
+                color = MaterialTheme.colorScheme.surfaceContainer,
                 shape = RoundedCornerShape(8.dp)
             )
             .padding(8.dp)

@@ -16,7 +16,7 @@ data class PeriodWithoutElectricity(
             2 -> "after tomorrow"
             else -> "after tomorrow"
         }
-        val prefix = if (now < to && from < now) "-> " else ""
+        val prefix = if (contains(now)) "-> " else ""
         return "${prefix}f(${from.hour}:${from.minute}) \t\t t(${to.hour}:${to.minute}) $suffix"
     }
 
