@@ -15,17 +15,13 @@ import kotlin.coroutines.resumeWithException
 class ShortagesService {
     private val url = "https://www.poe.pl.ua/customs/dynamicgpv-info.php"
 
-    suspend fun getShortages(): Shortages =
+    suspend fun getPeriodsWithoutElectricity(): List<PeriodWithoutElectricity> =
         withContext(Dispatchers.IO) {
             val document = getDocumentFromUrl()
             val slots = parseSlotsFromDocument(document)
+            val periods = calculatePeriodsWithoutElectricity(slots)
 
-            Shortages(
-                30,
-                LocalDateTime.now(),
-                "Europe/Kiev",
-                slots
-            )
+            periods
         }
 
     private fun getDocumentFromUrl(): Document {
@@ -117,5 +113,29 @@ class ShortagesService {
             day,
             0, 0, 0
         )
+    }
+
+    private fun calculatePeriodsWithoutElectricity(slots: List<Slot>): List<PeriodWithoutElectricity> {
+        val result = mutableListOf<PeriodWithoutElectricity>()
+
+        var from: Slot? = null
+        for (slot in slots) {
+            if (slot.state == State.RED && from == null) {
+                from = slot
+                continue
+            }
+            if ((slot.state == State.YELLOW || slot.state == State.GREEN) && from != null) {
+                val period = PeriodWithoutElectricity(from.time, slot.time)
+                result.add(period)
+                from = null
+            }
+        }
+
+        if (from != null) {
+            val period = PeriodWithoutElectricity(from.time, slots.last().time.plusMinutes(30))
+            result.add(period)
+        }
+
+        return result
     }
 }

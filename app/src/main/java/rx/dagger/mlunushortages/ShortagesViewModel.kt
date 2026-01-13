@@ -2,48 +2,73 @@ package rx.dagger.mlunushortages
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.LocalTime
 import kotlin.concurrent.timer
 
-class ShortagesViewModel: ViewModel() {
-    private val shortagesStateFlow = MutableStateFlow<Shortages?>(null)
-    val shortagesStateFlowSafe = shortagesStateFlow.asStateFlow()
+class ShortagesViewModel(
+    private val repository: ShortagesRepository
+): ViewModel() {
+    init {
+        viewModelScope.launch {
+            repository.updateAndNotify {
+                // Можно вызвать тот же showNotification(), если нужно
+            }
+        }
+    }
+    val periodsFlow = repository.periodsFlow
 
-    private val loadingStateFlow = MutableStateFlow<Boolean>(false)
+    private val loadingStateFlow = MutableStateFlow(false)
     val loadingStateFlowSafe = loadingStateFlow.asStateFlow()
 
-    private val shortagesService: ShortagesService = getMyShortagesService()
+    private val nowFlow = flow {
+        while (true) {
+            emit(LocalDateTime.now())
+            delay(1000)
+        }
+    }
 
-    private val periodsWithoutElectricityFlow = MutableStateFlow<List<PeriodWithoutElectricity>>(emptyList())
-    val periodWithoutElectricityFlowSafe = periodsWithoutElectricityFlow.asStateFlow()
-
-    private val timerStateFlow = MutableStateFlow<TimerState>(TimerState(true))
-    val timerStateFlowSafe = timerStateFlow.asStateFlow()
+    val timerStateFlowSafe: StateFlow<TimerState> =
+        combine(nowFlow, periodsFlow) { now, periods ->
+            calculateCurrentTimerState(now, periods)
+        }.stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5_000),
+            TimerState(true, null)
+        )
 
     fun update() {
         viewModelScope.launch {
             loadingStateFlow.value = true
             try {
-                val shortages = shortagesService.getShortages()
-                shortagesStateFlow.value = shortages
-                periodsWithoutElectricityFlow.value = calculatePeriodsWithoutElectricity(shortages)
-                val currentTimerState =
-                    calculateCurrentTimerState(periodsWithoutElectricityFlow.value)
-                timerStateFlow.value = currentTimerState
+//                val shortages = shortagesService.getShortages()
+//                shortagesStateFlow.value = shortages
+//                periodsWithoutElectricityFlow.value = calculatePeriodsWithoutElectricity(shortages)
+//                val currentTimerState =
+//                    calculateCurrentTimerState(periodsWithoutElectricityFlow.value)
+//                timerStateFlow.value = currentTimerState
             } finally {
                 loadingStateFlow.value = false
             }
         }
     }
 
-    private fun calculateCurrentTimerState(periods: List<PeriodWithoutElectricity>): TimerState {
-        val now = LocalDateTime.now()
-
+    private fun calculateCurrentTimerState(
+        now: LocalDateTime,
+        periods: List<PeriodWithoutElectricity>
+    ): TimerState {
         for (period in periods) {
             if (period.contains(now)) {
                 return TimerState(
@@ -59,29 +84,5 @@ class ShortagesViewModel: ViewModel() {
             isElectricityAvailable = true,
             timeRemaining = nearestPeriod?.from
         )
-    }
-
-    private fun calculatePeriodsWithoutElectricity(shortages: Shortages): List<PeriodWithoutElectricity> {
-        val result = mutableListOf<PeriodWithoutElectricity>()
-
-        var from: Slot? = null
-        for (slot in shortages.slots) {
-            if (slot.state == State.RED && from == null) {
-                from = slot
-                continue
-            }
-            if ((slot.state == State.YELLOW || slot.state == State.GREEN) && from != null) {
-                val period = PeriodWithoutElectricity(from.time, slot.time)
-                result.add(period)
-                from = null
-            }
-        }
-
-        if (from != null) {
-            val period = PeriodWithoutElectricity(from.time, shortages.slots.last().time.plusMinutes(30))
-            result.add(period)
-        }
-
-        return result
     }
 }

@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.delay
 import rx.dagger.mlunushortages.ui.theme.MlunuShortagesTheme
 import java.time.Duration
@@ -53,14 +54,12 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            val viewModel = ShortagesViewModel()
-            val loading = viewModel.loadingStateFlowSafe.collectAsState()
-            val shortages = viewModel.shortagesStateFlowSafe.collectAsState()
+            val viewModel: ShortagesViewModel = viewModel(
+                factory = ShortagesViewModelFactory(applicationContext)
+            )
             val periodWithoutElectricity =
-                viewModel.periodWithoutElectricityFlowSafe.collectAsState()
+                viewModel.periodsFlow.collectAsState(emptyList())
             val timerState = viewModel.timerStateFlowSafe.collectAsState()
-
-            viewModel.update()
 
             MlunuShortagesTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
