@@ -1,5 +1,6 @@
 package rx.dagger.mlunushortages
 
+import androidx.compose.runtime.collectAsState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.work.OneTimeWorkRequestBuilder
@@ -47,6 +48,15 @@ class ShortagesViewModel(
             viewModelScope,
             SharingStarted.WhileSubscribed(5_000),
             TimerState(true, null)
+        )
+
+    val periodsActualFlow: StateFlow<List<PeriodWithoutElectricity>> =
+        combine(nowFlow, periodsFlow) { now, periods ->
+            periods
+        }.stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5_000),
+            emptyList()
         )
 
     fun update() {

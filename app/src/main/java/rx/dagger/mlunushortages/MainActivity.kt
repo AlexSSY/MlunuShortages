@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -58,7 +59,7 @@ class MainActivity : ComponentActivity() {
                 factory = ShortagesViewModelFactory(applicationContext)
             )
             val periodWithoutElectricity =
-                viewModel.periodsFlow.collectAsState(emptyList())
+                viewModel.periodsActualFlow.collectAsState(emptyList())
             val timerState = viewModel.timerStateFlowSafe.collectAsState()
 
             MlunuShortagesTheme {
@@ -82,6 +83,12 @@ class MainActivity : ComponentActivity() {
                                     Text(it.toString())
                                 }
                             }
+                        }
+                        Row() {
+                            PowerOutagePieChart(
+                                periodWithoutElectricity.value,
+                                Modifier.size(500.dp)
+                            )
                         }
                     }
                 }
@@ -200,6 +207,42 @@ fun NumberBox(value: Long, label: String) {
                 fontSize = 8.sp,
                 lineHeight = 6.sp,
                 fontWeight = FontWeight.SemiBold
+            )
+        }
+    }
+}
+
+@Composable
+fun PowerOutagePieChart(
+    periods: List<PeriodWithoutElectricity>,
+    modifier: Modifier = Modifier
+) {
+    Canvas(
+        modifier = modifier
+            .size(200.dp)
+    ) {
+        val totalMinutesInDay = 24 * 60
+
+        periods.forEach { period ->
+            val startMinutes = period.from.toMinutesOfDay()
+            val endMinutes = period.to.toMinutesOfDay()
+
+            val durationMinutes =
+                if (endMinutes >= startMinutes) {
+                    endMinutes - startMinutes
+                } else {
+                    // период через полночь
+                    (totalMinutesInDay - startMinutes) + endMinutes
+                }
+
+            val startAngle = (startMinutes / totalMinutesInDay.toFloat()) * 360f - 90f
+            val sweepAngle = (durationMinutes / totalMinutesInDay.toFloat()) * 360f
+
+            drawArc(
+                color = Color.Red,
+                startAngle = startAngle,
+                sweepAngle = sweepAngle,
+                useCenter = true
             )
         }
     }
