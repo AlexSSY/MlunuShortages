@@ -10,8 +10,9 @@ class ShortagesViewModelFactory(
 
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(ShortagesViewModel::class.java)) {
-            val repository = ShortagesRepository(context.applicationContext)
-            return ShortagesViewModel(repository) as T
+            val shortagesRepository = ShortagesRepository(context.applicationContext)
+            val isGavRepository = GavRepository(context.applicationContext)
+            return ShortagesViewModel(shortagesRepository, isGavRepository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

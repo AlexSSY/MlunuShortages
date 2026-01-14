@@ -8,6 +8,9 @@ val gson = Gson()
 fun serializePeriods(list: List<PeriodWithoutElectricity>): String =
     gson.toJson(list.map { it.toDto() })
 
+fun serializeIsGav(value: Boolean): String =
+    gson.toJson(value)
+
 fun deserializePeriods(json: String): List<PeriodWithoutElectricity> =
     gson.fromJson<List<PeriodWithoutElectricityDto>>(
         json,
@@ -26,6 +29,16 @@ fun deserializePeriodsSafe(json: String): List<PeriodWithoutElectricity> =
             .map { it.toDomain() }
     }.getOrElse {
         emptyList()
+    }
+
+fun deserializeIsGavSafe(json: String): Boolean =
+    runCatching {
+        gson.fromJson<Boolean>(
+            json,
+            object : TypeToken<Boolean>() {}.type
+        )
+    }.getOrElse {
+        false
     }
 
 fun List<PeriodWithoutElectricity>.isValid(): Boolean =

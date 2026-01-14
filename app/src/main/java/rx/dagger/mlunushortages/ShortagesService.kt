@@ -24,6 +24,14 @@ class ShortagesService {
             periods
         }
 
+    suspend fun getIsGav(): Boolean =
+        withContext(Dispatchers.IO) {
+            val document = getDocumentFromUrl()
+            val isGav = parseIsGavFromDocument(document)
+
+            isGav
+        }
+
     private fun getDocumentFromUrl(): Document {
         repeat(3) {
             try {
@@ -136,6 +144,12 @@ class ShortagesService {
             result.add(period)
         }
 
+        return result
+    }
+
+    private suspend fun parseIsGavFromDocument(document: Document): Boolean {
+        val documentText = document.text()
+        val result = documentText.contains("ГАВ", ignoreCase = false)
         return result
     }
 }

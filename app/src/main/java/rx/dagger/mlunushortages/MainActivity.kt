@@ -11,16 +11,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -44,11 +40,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.graphics.toColorLong
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -56,8 +48,6 @@ import kotlinx.coroutines.delay
 import rx.dagger.mlunushortages.ui.theme.MlunuShortagesTheme
 import java.time.Duration
 import java.time.LocalDateTime
-import java.time.LocalTime
-import kotlin.concurrent.timer
 import kotlin.math.cos
 import kotlin.math.max
 import kotlin.math.sin
@@ -67,14 +57,16 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            val viewModel: ShortagesViewModel = viewModel(
+            val shortagesViewModel: ShortagesViewModel = viewModel(
                 factory = ShortagesViewModelFactory(applicationContext)
             )
             val periodWithoutElectricity =
-                viewModel.periodsActualFlow.collectAsState(emptyList())
-            val timerState = viewModel.timerStateFlowSafe.collectAsState()
-            val nowState = viewModel.nowFlow.collectAsState(LocalDateTime.now())
-            val todayTotalShortages = viewModel.todayShortagesTotal.collectAsState()
+                shortagesViewModel.periodsActualFlow.collectAsState(emptyList())
+            val todayPeriods = shortagesViewModel.todayPeriods.collectAsState()
+            val timerState = shortagesViewModel.timerStateFlowSafe.collectAsState()
+            val nowState = shortagesViewModel.nowFlow.collectAsState(LocalDateTime.now())
+            val todayTotalShortages = shortagesViewModel.todayShortagesTotal.collectAsState()
+            val isGav = shortagesViewModel.isGav.collectAsState(false)
 
             MlunuShortagesTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
@@ -83,6 +75,12 @@ class MainActivity : ComponentActivity() {
                             .fillMaxSize()
                             .padding(innerPadding)
                     ) {
+                        Row() {
+                            GavWidget(
+                                modifier = Modifier.fillMaxWidth(),
+                                isGav = isGav.value
+                            )
+                        }
                         Row() {
                             TimerWidget(
                                 modifier = Modifier.fillMaxWidth(),
@@ -128,7 +126,7 @@ class MainActivity : ComponentActivity() {
                                 contentAlignment = Alignment.Center
                             ) {
                                 PowerOutageDonutChart(
-                                    periods = periodWithoutElectricity.value,
+                                    periods = todayPeriods.value,
                                     textColor = Color.Black
                                 )
                                 TimeArrow(
@@ -152,6 +150,21 @@ class MainActivity : ComponentActivity() {
                                 ) {
                                     Text("-${todayTotalShortages.value} +${24 - todayTotalShortages.value}")
                                 }
+                            }
+                        }
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Button(
+                                onClick = {
+                                    shortagesViewModel.update()
+                                }
+                            ) {
+                                Text(
+                                    text = "updateAndNotify"
+                                )
                             }
                         }
                     }
@@ -453,4 +466,12 @@ fun TimeArrow(
             center = center
         )
     }
+}
+
+@Composable
+fun GavWidget(
+    modifier: Modifier,
+    isGav: Boolean
+) {
+    Text(text = isGav.toString())
 }

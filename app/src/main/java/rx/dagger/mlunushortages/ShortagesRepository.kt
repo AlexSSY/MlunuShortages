@@ -18,7 +18,7 @@ class ShortagesRepository(private val context: Context) {
     val periodsFlow: Flow<List<PeriodWithoutElectricity>> =
         dataStore.data.map { prefs ->
             prefs[PERIODS_KEY]
-                ?.let { deserializePeriods(it) }
+                ?.let { deserializePeriodsSafe(it) }
                 ?: emptyList()
         }
 
@@ -45,22 +45,25 @@ class ShortagesRepository(private val context: Context) {
         }
     }
 
-    suspend fun fetchFromNetwork(): List<PeriodWithoutElectricity> {
-        return try {
-            getMyShortagesService().getPeriodsWithoutElectricity()
-        } catch (e: Exception) {
-            Log.e("fetchFromNetwork", "An error occurred:", e)
-            emptyList()
-        }
-    }
+    suspend fun fetchFromNetwork(): List<PeriodWithoutElectricity> =
+        getMyShortagesService().getPeriodsWithoutElectricity()
+
 
     suspend fun updateAndNotify(showNotification: () -> Unit) {
         val oldData = loadCached()
-        val newData = fetchFromNetwork()
 
-        if (oldData != newData) {
-            save(newData)
-            showNotification()
+        val newData = try {
+             fetchFromNetwork()
+        } catch (e: Exception) {
+            Log.e("fetchFromNetwork", "An error occurred:", e)
+            null
+        }
+
+        newData?.let {
+            if (oldData != newData) {
+                save(newData)
+                showNotification()
+            }
         }
     }
 }

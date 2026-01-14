@@ -1,10 +1,7 @@
 package rx.dagger.mlunushortages
 
-import androidx.compose.runtime.collectAsState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkManager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -16,20 +13,17 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.Duration
 import java.time.LocalDateTime
-import java.time.LocalTime
-import kotlin.concurrent.timer
 
 class ShortagesViewModel(
-    private val repository: ShortagesRepository
+    private val shortagesRepository: ShortagesRepository,
+    private val isGavRepository: GavRepository
 ): ViewModel() {
     init {
-        viewModelScope.launch {
-            repository.updateAndNotify {
-                // Можно вызвать тот же showNotification(), если нужно
-            }
-        }
+        update()
     }
-    val periodsFlow = repository.periodsFlow
+
+    val periodsFlow = shortagesRepository.periodsFlow
+    val isGav = isGavRepository.isGavFlow
 
     private val loadingStateFlow = MutableStateFlow(false)
     val loadingStateFlowSafe = loadingStateFlow.asStateFlow()
@@ -67,6 +61,31 @@ class ShortagesViewModel(
             SharingStarted.WhileSubscribed(5_000),
             0f
         )
+
+    val todayPeriods: StateFlow<List<PeriodWithoutElectricity>> =
+        combine(nowFlow, periodsFlow) { now, periods ->
+            calculateTodayPeriods(now, periods)
+        }.stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5_000),
+            emptyList()
+        )
+
+    private fun calculateTodayPeriods(
+        now: LocalDateTime,
+        periods: List<PeriodWithoutElectricity>
+    ): List<PeriodWithoutElectricity> = periods.filter { it.from.dayOfMonth == now.dayOfMonth }
+
+    fun update() {
+        viewModelScope.launch {
+            shortagesRepository.updateAndNotify {
+                // Можно вызвать тот же showNotification(), если нужно
+            }
+            isGavRepository.updateAndNotify {
+                // Можно вызвать тот же showNotification(), если нужно
+            }
+        }
+    }
 
     private fun calculateTodayShortages(
         now: LocalDateTime,
