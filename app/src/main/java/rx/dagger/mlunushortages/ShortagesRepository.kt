@@ -1,6 +1,7 @@
 package rx.dagger.mlunushortages
 
 import android.content.Context
+import android.util.Log
 import androidx.datastore.preferences.core.edit
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -44,8 +45,14 @@ class ShortagesRepository(private val context: Context) {
         }
     }
 
-    suspend fun fetchFromNetwork(): List<PeriodWithoutElectricity> =
-        getMyShortagesService().getPeriodsWithoutElectricity()
+    suspend fun fetchFromNetwork(): List<PeriodWithoutElectricity> {
+        return try {
+            getMyShortagesService().getPeriodsWithoutElectricity()
+        } catch (e: Exception) {
+            Log.e("fetchFromNetwork", "An error occurred:", e)
+            emptyList()
+        }
+    }
 
     suspend fun updateAndNotify(showNotification: () -> Unit) {
         val oldData = loadCached()

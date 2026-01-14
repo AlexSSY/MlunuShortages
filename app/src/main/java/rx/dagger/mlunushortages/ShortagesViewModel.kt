@@ -34,7 +34,7 @@ class ShortagesViewModel(
     private val loadingStateFlow = MutableStateFlow(false)
     val loadingStateFlowSafe = loadingStateFlow.asStateFlow()
 
-    private val nowFlow = flow {
+    val nowFlow = flow {
         while (true) {
             emit(LocalDateTime.now())
             delay(1000)
@@ -59,24 +59,33 @@ class ShortagesViewModel(
             emptyList()
         )
 
-    fun update() {
-        viewModelScope.launch {
-            loadingStateFlow.value = true
-            try {
-//                val shortages = shortagesService.getShortages()
-//                shortagesStateFlow.value = shortages
-//                periodsWithoutElectricityFlow.value = calculatePeriodsWithoutElectricity(shortages)
-//                val currentTimerState =
-//                    calculateCurrentTimerState(periodsWithoutElectricityFlow.value)
-//                timerStateFlow.value = currentTimerState
-            } finally {
-                loadingStateFlow.value = false
-            }
+    val todayShortagesTotal: StateFlow<Float> =
+        combine(nowFlow, periodsFlow) { now, periods ->
+            calculateTodayShortages(now, periods)
+        }.stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5_000),
+            0f
+        )
+
+    private fun calculateTodayShortages(
+        now: LocalDateTime,
+        periods: List<PeriodWithoutElectricity>
+    ): Float {
+        var totalSeconds = 0L
+
+        periods.filter { it.from.dayOfMonth == now.dayOfMonth }.forEach {
+            val duration = Duration.between(it.from, it.to)
+            totalSeconds += duration.seconds
         }
+
+        val totalMinutes = totalSeconds / 60
+        val totalHours = totalMinutes / 60f
+
+        return totalHours
     }
 
-    private fun calculateCurrentTimerState(
-        now: LocalDateTime,
+    private fun calculateCurrentTimerState(now: LocalDateTime,
         periods: List<PeriodWithoutElectricity>
     ): TimerState {
         for (period in periods) {

@@ -14,12 +14,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
@@ -34,7 +36,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.center
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.toColorLong
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.TextUnit
@@ -48,7 +58,9 @@ import java.time.Duration
 import java.time.LocalDateTime
 import java.time.LocalTime
 import kotlin.concurrent.timer
+import kotlin.math.cos
 import kotlin.math.max
+import kotlin.math.sin
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -61,11 +73,14 @@ class MainActivity : ComponentActivity() {
             val periodWithoutElectricity =
                 viewModel.periodsActualFlow.collectAsState(emptyList())
             val timerState = viewModel.timerStateFlowSafe.collectAsState()
+            val nowState = viewModel.nowFlow.collectAsState(LocalDateTime.now())
+            val todayTotalShortages = viewModel.todayShortagesTotal.collectAsState()
 
             MlunuShortagesTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     Column(
                         modifier = Modifier
+                            .fillMaxSize()
                             .padding(innerPadding)
                     ) {
                         Row() {
@@ -74,21 +89,70 @@ class MainActivity : ComponentActivity() {
                                 timerState = timerState.value
                             )
                         }
+//                        Row() {
+//                            LazyColumn(
+//                                modifier = Modifier
+//                                    .fillMaxSize()
+//                            ) {
+//                                items(periodWithoutElectricity.value) {
+//                                    Text(it.toString())
+//                                }
+//                            }
+//                        }
+//                        Row(
+//                            modifier = Modifier
+//                                .fillMaxWidth()
+//                                .height(220.dp),
+//                            horizontalArrangement = Arrangement.Center,
+//                            verticalAlignment = Alignment.CenterVertically
+//                        ) {
+//                            Canvas(
+//                                modifier = Modifier.size(200.dp)
+//                            ) {
+//                                drawCircle(
+//                                    color = Color.Red,
+//                                    radius = size.minDimension / 2
+//                                )
+//                            }
+//                        }
+//                        Row() {
+//                            PowerOutagePieChart(
+//                                periodWithoutElectricity.value
+//                            )
+//                        }
                         Row() {
-                            LazyColumn(
+                            Box(
                                 modifier = Modifier
-                                    .fillMaxSize()
+                                    .fillMaxWidth()
+                                    .height(360.dp),
+                                contentAlignment = Alignment.Center
                             ) {
-                                items(periodWithoutElectricity.value) {
-                                    Text(it.toString())
+                                PowerOutageDonutChart(
+                                    periods = periodWithoutElectricity.value,
+                                    textColor = Color.Black
+                                )
+                                TimeArrow(
+                                    modifier = Modifier.fillMaxSize(),
+                                    arrowColor = MaterialTheme.colorScheme.onBackground,
+                                    nowState.value
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .size(120.dp)
+                                        .background(
+                                            color = MaterialTheme.colorScheme.background,
+                                            shape = CircleShape
+                                        )
+                                        .border(
+                                            width = 3.dp,
+                                            color = MaterialTheme.colorScheme.onBackground,
+                                            shape = CircleShape
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text("-${todayTotalShortages.value} +${24 - todayTotalShortages.value}")
                                 }
                             }
-                        }
-                        Row() {
-                            PowerOutagePieChart(
-                                periodWithoutElectricity.value,
-                                Modifier.size(500.dp)
-                            )
                         }
                     }
                 }
@@ -245,5 +309,148 @@ fun PowerOutagePieChart(
                 useCenter = true
             )
         }
+    }
+}
+
+private const val HOURS_IN_DAY = 24
+private const val DEGREES_PER_HOUR = 360f / HOURS_IN_DAY
+
+fun hourToAngle(hour: Int): Float =
+    hour * DEGREES_PER_HOUR - 90f
+
+@Composable
+fun PowerOutageDonutChart(
+    periods: List<PeriodWithoutElectricity>,
+    modifier: Modifier = Modifier,
+    textColor: Color
+) {
+    Canvas(
+        modifier = modifier
+            .size(320.dp)
+    ) {
+        val center = center
+        val radius = size.minDimension / 2
+
+        val outerStroke = 36f
+        val innerStroke = 36f
+
+        // ─────────────────────────────
+        // 1️⃣ ВНЕШНИЙ КРУГ (часы)
+        // ─────────────────────────────
+        repeat(24) { hour ->
+            drawArc(
+                color = Color(0xFFAEEED0),
+                startAngle = hourToAngle(hour),
+                sweepAngle = DEGREES_PER_HOUR,
+                useCenter = false,
+                style = Stroke(
+                    width = outerStroke,
+                    cap = StrokeCap.Butt
+                ),
+                size = Size(
+                    (radius * 2) - outerStroke,
+                    (radius * 2) - outerStroke
+                ),
+                topLeft = Offset(
+                    outerStroke / 2,
+                    outerStroke / 2
+                )
+            )
+        }
+
+        // ─────────────────────────────
+        // 2️⃣ КРАСНЫЕ ПЕРИОДЫ
+        // ─────────────────────────────
+        periods.forEach { period ->
+            val startHour = period.from.hour + period.from.minute / 60f
+            val endHour = period.to.hour + period.to.minute / 60f
+
+            val sweepHours =
+                if (endHour >= startHour) {
+                    endHour - startHour
+                } else {
+                    (24 - startHour) + endHour
+                }
+
+            drawArc(
+                color = Color(0xFFD16A6A),
+                startAngle = startHour * DEGREES_PER_HOUR - 90f,
+                sweepAngle = sweepHours * DEGREES_PER_HOUR,
+                useCenter = false,
+                style = Stroke(
+                    width = innerStroke,
+                    cap = StrokeCap.Butt
+                ),
+                size = Size(
+                    (radius * 2) - outerStroke,
+                    (radius * 2) - outerStroke
+                ),
+                topLeft = Offset(
+                    outerStroke / 2,
+                    outerStroke / 2
+                )
+            )
+        }
+
+        // ─────────────────────────────
+        // 3️⃣ ЧАСЫ ПО ОКРУЖНОСТИ
+        // ─────────────────────────────
+        repeat(24) { hour ->
+            val angleRad = Math.toRadians(hourToAngle(hour).toDouble())
+
+            val textRadius = radius - outerStroke / 2
+            val x = center.x + cos(angleRad).toFloat() * textRadius
+            val y = center.y + sin(angleRad).toFloat() * textRadius
+
+            drawContext.canvas.nativeCanvas.drawText(
+                hour.toString(),
+                x,
+                y,
+                android.graphics.Paint().apply {
+                    textAlign = android.graphics.Paint.Align.CENTER
+                    textSize = 32f
+                    color = textColor.toArgb()
+                    isFakeBoldText = true
+                }
+            )
+        }
+    }
+}
+
+fun timeToAngle(now: LocalDateTime): Float {
+    val minutes = now.hour * 60 + now.minute + now.second / 60f
+    return (minutes / (24f * 60f)) * 360f - 90f
+}
+
+@Composable
+fun TimeArrow(
+    modifier: Modifier = Modifier,
+    arrowColor: Color = Color.Black,
+    now: LocalDateTime
+) {
+    Canvas(modifier = modifier) {
+        val center = size.center
+        val radius = size.minDimension / 2 * 0.9f
+
+        val angleRad = Math.toRadians(timeToAngle(now).toDouble())
+
+        val endX = center.x + cos(angleRad).toFloat() * radius
+        val endY = center.y + sin(angleRad).toFloat() * radius
+
+        // основная линия
+        drawLine(
+            color = arrowColor,
+            start = center,
+            end = Offset(endX, endY),
+            strokeWidth = 3.dp.toPx(),
+            cap = StrokeCap.Round
+        )
+
+        // кружок в центре
+        drawCircle(
+            color = arrowColor,
+            radius = 6.dp.toPx(),
+            center = center
+        )
     }
 }
