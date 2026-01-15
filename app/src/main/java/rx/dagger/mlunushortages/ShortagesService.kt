@@ -27,7 +27,9 @@ class ShortagesService {
     suspend fun getIsGav(): Boolean =
         withContext(Dispatchers.IO) {
             val document = getDocumentFromUrl()
-            val isGav = parseIsGavFromDocument(document)
+            val isGav = parseIsGavFromUrl(
+                "https://www.poe.pl.ua/customs/dynamic-unloading-info.php"
+            )
 
             isGav
         }
@@ -60,7 +62,8 @@ class ShortagesService {
             }
             val dateString = dateElement.text()
             val date = parseUaDate(dateString)
-            val tr = gpvDiv.selectFirst(".turnoff-scheduleui-table > tbody:nth-child(2) > tr:nth-child(2)")
+            val tr =
+                gpvDiv.selectFirst(".turnoff-scheduleui-table > tbody:nth-child(2) > tr:nth-child(2)")
             if (tr == null) {
                 throw InvalidHtmlForParsing("Failed to parse tr")
             }
@@ -76,7 +79,7 @@ class ShortagesService {
         }
 
         var counter = 0
-        for((date, numbers) in dateNumbers) {
+        for ((date, numbers) in dateNumbers) {
             numbers.forEachIndexed { idx, number ->
                 val time = date.plusSeconds(idx.toLong() * 30 * 60)
                 val state = when (number) {
@@ -151,5 +154,15 @@ class ShortagesService {
         val documentText = document.text()
         val result = documentText.contains("ГАВ", ignoreCase = false)
         return result
+    }
+
+    private suspend fun parseIsGavFromUrl(url: String): Boolean {
+        val json = try {
+            downloadJson(url)
+        } catch (e: Exception) {
+            ""
+        }
+        val hasGAV = json.contains("\"unloadingtypename\":\"ГАВ\"")
+        return hasGAV
     }
 }

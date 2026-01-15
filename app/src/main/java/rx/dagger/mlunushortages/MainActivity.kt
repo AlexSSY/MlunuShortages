@@ -344,8 +344,8 @@ fun PowerOutageDonutChart(
         val center = center
         val radius = size.minDimension / 2
 
-        val outerStroke = 36f
-        val innerStroke = 36f
+        val outerStroke = 72f//36f
+        val innerStroke = 72f//36f
 
         // ─────────────────────────────
         // 1️⃣ ВНЕШНИЙ КРУГ (часы)
@@ -418,7 +418,7 @@ fun PowerOutageDonutChart(
             drawContext.canvas.nativeCanvas.drawText(
                 hour.toString(),
                 x,
-                y,
+                y + 12f,
                 android.graphics.Paint().apply {
                     textAlign = android.graphics.Paint.Align.CENTER
                     textSize = 32f
@@ -470,8 +470,32 @@ fun TimeArrow(
 
 @Composable
 fun GavWidget(
-    modifier: Modifier,
+    modifier: Modifier = Modifier,
     isGav: Boolean
 ) {
-    Text(text = isGav.toString())
+    if (isGav) {
+        val shape = RoundedCornerShape(8.dp)
+
+        Box(
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+                .border(
+                    color= MaterialTheme.colorScheme.surfaceContainer,
+                    width = 1.dp,
+                    shape = shape
+                )
+                .background(
+                    color = Color(0xffffc9c9),
+                    shape = shape
+                )
+                .padding(8.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "Дейсивует граффик аварийных отключений (ГАВ)",
+                fontSize = 14.sp
+            )
+        }
+    }
 }

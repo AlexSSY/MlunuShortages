@@ -54,6 +54,7 @@ dependencies {
     implementation("androidx.datastore:datastore-preferences:1.2.0")
     implementation("com.google.code.gson:gson:2.13.2")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation(libs.androidx.work.runtime.ktx)
 //    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1")
     testImplementation(libs.junit)
