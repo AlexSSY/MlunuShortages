@@ -1,6 +1,7 @@
 package rx.dagger.mlunushortages.core
 
 import java.time.Instant
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 
@@ -15,4 +16,19 @@ fun localDateTimeFromEpoch(ePoch: Long): LocalDateTime {
         Instant.ofEpochSecond(ePoch),
         zone
     )
+}
+
+fun localDateToEpoch(localDate: LocalDate): Long {
+    val zone = ZoneId.systemDefault()
+    return localDate
+        .atStartOfDay(zone)
+        .toEpochSecond()
+}
+
+fun localDateFromEpoch(epoch: Long): LocalDate {
+    val zone = ZoneId.systemDefault()
+    return Instant
+        .ofEpochSecond(epoch)
+        .atZone(zone)
+        .toLocalDate()
 }
