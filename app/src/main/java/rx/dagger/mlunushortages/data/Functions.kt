@@ -7,33 +7,28 @@ import okhttp3.Request
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import rx.dagger.mlunushortages.InvalidHtmlForParsing
-import rx.dagger.mlunushortages.Slot
-import rx.dagger.mlunushortages.State
 import rx.dagger.mlunushortages.core.localDateTimeToEpoch
+import rx.dagger.mlunushortages.core.localDateToEpoch
+import rx.dagger.mlunushortages.domain.Schedule
 import java.net.SocketTimeoutException
-import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.ZoneId
 
 private val slotsUrl = "https://www.poe.pl.ua/customs/dynamicgpv-info.php"
 private val gavUrl = "https://www.poe.pl.ua/customs/dynamic-unloading-info.php"
 
 suspend fun downloadShortages(): ShortagesDto {
-    val allSlots = downloadSlots()
-
     val isGav = fetchGavStatus()
-    val todaySlots = allSlots.slice(0..47)
-    val tomorrowSlots = allSlots.slice(48..95)
+    val schedules = downloadSchedules()
 
-    return ShortagesDto(isGav, todaySlots, tomorrowSlots)
+    return ShortagesDto(isGav, schedules)
 }
 
-private fun downloadSlots(): List<SlotDto> {
+private fun downloadSchedules(): List<ScheduleDto> {
     val document = getDocumentFromUrl(slotsUrl)
 
-    val slots = mutableListOf<SlotDto>()
-    val dateNumbers = mutableMapOf<LocalDateTime, List<Int>>()
+    val schedules = mutableListOf<ScheduleDto>()
+    val dateNumbers = mutableMapOf<LocalDate, List<Int>>()
     val gpvDivs = document.select(".gpvinfodetail")
 
     for (gpvDiv in gpvDivs) {
@@ -59,18 +54,25 @@ private fun downloadSlots(): List<SlotDto> {
         dateNumbers[date] = numbers
     }
 
-    var counter = 0
+//    var counter = 0
     for ((date, numbers) in dateNumbers) {
+
+        val slots = mutableListOf<SlotDto>()
+
         numbers.forEachIndexed { idx, number ->
-            val time = date.plusSeconds(idx.toLong() * 30 * 60)
+//            val time = date.plusSeconds(idx.toLong() * 30 * 60)
             slots.add(
-                SlotDto(localDateTimeToEpoch(time), number, counter)
+                SlotDto(number, idx)
             )
-            counter++
+//            counter++
         }
+
+        schedules.add(
+            ScheduleDto(localDateToEpoch(date), slots)
+        )
     }
 
-    return slots
+    return schedules
 }
 
 private suspend fun fetchGavStatus(): Boolean = withContext(Dispatchers.IO) {
@@ -95,7 +97,7 @@ private fun getDocumentFromUrl(url: String): Document {
     )
 }
 
-private fun parseUaDate(uaDateString: String): LocalDateTime {
+private fun parseUaDate(uaDateString: String): LocalDate {
     val months = hashMapOf(
         "січня" to 1,
         "лютого" to 2,
@@ -115,12 +117,7 @@ private fun parseUaDate(uaDateString: String): LocalDateTime {
     val day = dayString.toInt()
     val month = months[monthName] ?: 1
     val year = yearString.toInt()
-    return LocalDateTime.of(
-        year,
-        month,
-        day,
-        0, 0, 0
-    )
+    return LocalDate.of(year, month, day)
 }
 
 private fun downloadJson(url: String): String {
