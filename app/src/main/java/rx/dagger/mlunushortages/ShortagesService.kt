@@ -44,10 +44,10 @@ class ShortagesService {
             }
         }
 
-        throw RetryLimitExceededException(
-            "Failed to connect after 3 retries",
-            SocketTimeoutException()
-        )
+            throw RetryLimitExceededException(
+                "Failed to connect after 3 retries",
+                SocketTimeoutException()
+            )
     }
 
     private fun parseSlotsFromDocument(document: Document): List<Slot> {
