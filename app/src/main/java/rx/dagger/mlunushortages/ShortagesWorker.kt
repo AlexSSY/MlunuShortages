@@ -13,19 +13,13 @@ class ShortagesWorker(
     override suspend fun doWork(): Result {
         Log.d("ShortagesWorker", "doWork STARTED")
 
-        showNotification(
-            context = applicationContext,
-            title = "Test",
-            text = "Test Notification"
-        )
-
         val shortagesRepository = ShortagesRepository(applicationContext)
 
         shortagesRepository.updateAndNotify {
             showNotification(
                 context = applicationContext,
-                title = "Новый график отключений",
-                text = "Появился график на завтра"
+                title = "Изменения в граффике",
+                text = "Изменился текущий граффик, или появился граффик на завтра"
             )
         }
 
