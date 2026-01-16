@@ -92,11 +92,13 @@ fun Screen() {
                     Text("-${todayTotalShortages.value} +${24 - todayTotalShortages.value}")
                 }
             }
-            Text(
-                text = "Tomorrow schedule:",
-                textAlign = TextAlign.Center
-            )
             if (tomorrowChartSectors.value != null) {
+                Text(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    text = "Tomorrow schedule:",
+                    textAlign = TextAlign.Center
+                )
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -124,8 +126,6 @@ fun Screen() {
                         Text("-${tomorrowTotalShortages.value} +${24 - tomorrowTotalShortages.value}")
                     }
                 }
-            } else {
-                Text("No Data")
             }
         }
     }

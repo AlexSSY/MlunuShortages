@@ -1,4 +1,4 @@
-package rx.dagger.mlunushortages.ui.theme
+package rx.dagger.mlunushortages.presentation.theme
 
 import androidx.compose.ui.graphics.Color
 

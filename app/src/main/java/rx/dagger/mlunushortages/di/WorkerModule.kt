@@ -2,7 +2,7 @@ package rx.dagger.mlunushortages.di
 
 import org.koin.androidx.workmanager.dsl.worker
 import org.koin.dsl.module
-import rx.dagger.mlunushortages.ShortagesWorker
+import rx.dagger.mlunushortages.infrastructure.ShortagesWorker
 
 val workerModule = module {
 
@@ -10,7 +10,8 @@ val workerModule = module {
         ShortagesWorker(
             context = get(),
             params = get(),
-            repository = get()
+            repository = get(),
+            notifier = get()
         )
     }
 }

@@ -1,4 +1,4 @@
-package rx.dagger.mlunushortages
+package rx.dagger.mlunushortages.infrastructure
 
 import android.content.Context
 import android.util.Log
@@ -9,9 +9,9 @@ import rx.dagger.mlunushortages.domain.Repository
 class ShortagesWorker(
     context: Context,
     params: WorkerParameters,
-    private val repository: Repository
+    private val repository: Repository,
+    private val notifier: Notifier
 ) : CoroutineWorker(context, params) {
-
     override suspend fun doWork(): Result {
         Log.d("ShortagesWorker", "doWork executed")
 
@@ -22,7 +22,17 @@ class ShortagesWorker(
         freshShortages?.let {
             val cachedShortages = repository.loadFromCache()
             if (cachedShortages != it) {
-                // Notify
+
+                if (cachedShortages.schedules.size != it.schedules.size) {
+                    notifier.notifyTomorrowScheduleAvailable()
+                } else {
+                    notifier.notifyTodayScheduleChanged()
+                }
+
+                if (cachedShortages.isGav != it.isGav) {
+                    notifier.notifyGav(it.isGav)
+                }
+
                 repository.save(it)
             }
         }

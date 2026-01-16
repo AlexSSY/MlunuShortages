@@ -7,13 +7,8 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
-import rx.dagger.mlunushortages.data.InvalidHtmlForParsing
-import rx.dagger.mlunushortages.core.localDateTimeToEpoch
-import rx.dagger.mlunushortages.core.localDateToEpoch
-import rx.dagger.mlunushortages.domain.Schedule
 import java.net.SocketTimeoutException
 import java.time.LocalDate
-import java.time.LocalDateTime
 
 private val slotsUrl = "https://www.poe.pl.ua/customs/dynamicgpv-info.php"
 private val gavUrl = "https://www.poe.pl.ua/customs/dynamic-unloading-info.php"

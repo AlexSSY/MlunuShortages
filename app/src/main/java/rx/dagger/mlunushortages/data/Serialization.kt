@@ -7,11 +7,7 @@ val gson = Gson()
 
 fun deserializeShortages(json: String): ShortagesDto =
     runCatching {
-        gson.fromJson<ShortagesDto>(
-            json,
-            ShortagesDto::class.java
-//            object : TypeToken<ShortagesDto>() {}.type
-        )
+        gson.fromJson<ShortagesDto>(json, ShortagesDto::class.java)
     }.getOrElse {
         ShortagesDto(false, emptyList())
     }

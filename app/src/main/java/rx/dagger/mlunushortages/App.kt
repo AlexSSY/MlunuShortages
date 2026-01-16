@@ -10,10 +10,11 @@ import androidx.work.WorkManager
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.workmanager.factory.KoinWorkerFactory
 import org.koin.core.context.GlobalContext.startKoin
-import rx.dagger.mlunushortages.core.createNotificationChannel
 import rx.dagger.mlunushortages.di.dataModule
+import rx.dagger.mlunushortages.di.notifierModule
 import rx.dagger.mlunushortages.di.viewModelModule
 import rx.dagger.mlunushortages.di.workerModule
+import rx.dagger.mlunushortages.infrastructure.ShortagesWorker
 import java.util.concurrent.TimeUnit
 
 class App : Application(), Configuration.Provider {
@@ -24,7 +25,8 @@ class App : Application(), Configuration.Provider {
             modules(
                 dataModule,
                 viewModelModule,
-                workerModule
+                workerModule,
+                notifierModule
             )
         }
     }
@@ -32,7 +34,6 @@ class App : Application(), Configuration.Provider {
     override fun onCreate() {
         super.onCreate()
 
-        createNotificationChannel(this)
         scheduleShortagesWorker()
     }
 
