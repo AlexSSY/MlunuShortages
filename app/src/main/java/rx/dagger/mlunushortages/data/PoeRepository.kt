@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.map
 import rx.dagger.mlunushortages.domain.Repository
 import rx.dagger.mlunushortages.domain.Shortages
 
-class PoeRepository(private val context: Context) : Repository {
+class PoeRepository(context: Context) : Repository {
     private val datastoreKey = stringPreferencesKey("shortages")
     private val dataStore = context.dataStore
 

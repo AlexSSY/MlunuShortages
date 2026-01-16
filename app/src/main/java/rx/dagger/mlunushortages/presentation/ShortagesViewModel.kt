@@ -25,40 +25,43 @@ class ShortagesViewModel(
         update()
     }
 
-    private val shortagesFlow = repository.shortages
+    val shortagesStateFlow = repository.shortages
+        .stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5_000),
+            Shortages(false, emptyList())
+        )
 
-    val shortagesStateFlow = shortagesFlow.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = Shortages(false, emptyList())
-    )
-
-    val periodsWithoutElectricityStateFlow: StateFlow<List<PeriodWithoutElectricity>> =
-        shortagesFlow
-            .map { shortages ->
-                calculatePeriodsWithoutElectricity(shortages)
-            }
+    val periodsWithoutElectricityStateFlow =
+        shortagesStateFlow
+            .map { calculatePeriodsWithoutElectricity(it) }
             .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5_000),
-                initialValue = emptyList()
+                viewModelScope,
+                SharingStarted.WhileSubscribed(5_000),
+                emptyList()
             )
 
-    val nowFlow = flow {
-        while (true) {
-            emit(LocalDateTime.now())
-            delay(1000)
-        }
-    }
+    private val nowFlow =
+        flow {
+            while (true) {
+                emit(LocalDateTime.now())
+                delay(1000)
+            }
+        }.stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5_000),
+            LocalDateTime.now()
+        )
 
-    val timerStateFlow: StateFlow<TimerState> =
+    val timerStateFlow =
         combine(nowFlow, periodsWithoutElectricityStateFlow) { now, periods ->
             calculateCurrentTimerState(now, periods)
         }.stateIn(
             viewModelScope,
-            SharingStarted.Companion.WhileSubscribed(5_000),
-            TimerState(true, null)
+            SharingStarted.WhileSubscribed(5_000),
+            TimerState(isElectricityAvailable = true, timeRemaining = null)
         )
+
 
     val periodsActualFlow: StateFlow<List<PeriodWithoutElectricity>> =
         combine(nowFlow, periodsWithoutElectricityStateFlow) { now, periods ->

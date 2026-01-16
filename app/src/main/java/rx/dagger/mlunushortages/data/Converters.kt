@@ -17,9 +17,9 @@ fun ScheduleDto.toDomain(): Schedule {
 
 fun SlotDto.toDomain(): Slot {
     val domainState = when (state) {
-        1 -> SlotState.RED
-        2 -> SlotState.YELLOW
-        3 -> SlotState.GREEN
+        1 -> SlotState.GREEN
+        2 -> SlotState.RED
+        3 -> SlotState.YELLOW
         else -> SlotState.GREEN
     }
     return Slot(domainState, i)
@@ -35,9 +35,9 @@ fun Schedule.toDto(): ScheduleDto {
 
 fun Slot.toDto(): SlotDto {
     val dtoState = when (slotState) {
-        SlotState.RED -> 1
-        SlotState.YELLOW -> 2
-        SlotState.GREEN -> 3
+        SlotState.GREEN -> 1
+        SlotState.RED -> 2
+        SlotState.YELLOW -> 3
     }
     return SlotDto(dtoState, i)
 }
