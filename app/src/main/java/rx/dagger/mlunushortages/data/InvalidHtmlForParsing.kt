@@ -1,8 +1,8 @@
-package rx.dagger.mlunushortages
+package rx.dagger.mlunushortages.data
 
 import java.io.IOException
 
-class RetryLimitExceededException(
+class InvalidHtmlForParsing(
     message: String,
     cause: Throwable? = null
 ) : IOException(message, cause)

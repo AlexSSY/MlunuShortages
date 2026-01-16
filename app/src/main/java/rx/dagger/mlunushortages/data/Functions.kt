@@ -6,7 +6,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
-import rx.dagger.mlunushortages.InvalidHtmlForParsing
+import rx.dagger.mlunushortages.data.InvalidHtmlForParsing
 import rx.dagger.mlunushortages.core.localDateTimeToEpoch
 import rx.dagger.mlunushortages.core.localDateToEpoch
 import rx.dagger.mlunushortages.domain.Schedule

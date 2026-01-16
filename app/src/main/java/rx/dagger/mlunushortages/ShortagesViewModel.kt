@@ -11,12 +11,13 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import rx.dagger.mlunushortages.domain.Repository
+import rx.dagger.mlunushortages.presentation.TimerState
 import java.time.Duration
 import java.time.LocalDateTime
 
 class ShortagesViewModel(
-    private val shortagesRepository: ShortagesRepository,
-    private val isGavRepository: GavRepository
+    private val repository: Repository
 ): ViewModel() {
     init {
         update()

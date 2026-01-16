@@ -32,3 +32,7 @@ fun localDateFromEpoch(epoch: Long): LocalDate {
         .atZone(zone)
         .toLocalDate()
 }
+
+fun LocalDateTime.toMinutesOfDay(): Int {
+    return hour * 60 + minute
+}

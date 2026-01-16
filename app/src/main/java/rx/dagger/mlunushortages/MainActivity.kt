@@ -43,8 +43,9 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import org.koin.androidx.compose.koinViewModel
 import kotlinx.coroutines.delay
+import rx.dagger.mlunushortages.presentation.TimerState
 import rx.dagger.mlunushortages.ui.theme.MlunuShortagesTheme
 import java.time.Duration
 import java.time.LocalDateTime
@@ -57,9 +58,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            val shortagesViewModel: ShortagesViewModel = viewModel(
-                factory = ShortagesViewModelFactory(applicationContext)
-            )
+            val shortagesViewModel: ShortagesViewModel = koinViewModel()
             val periodWithoutElectricity =
                 shortagesViewModel.periodsActualFlow.collectAsState(emptyList())
             val todayPeriods = shortagesViewModel.todayPeriods.collectAsState()

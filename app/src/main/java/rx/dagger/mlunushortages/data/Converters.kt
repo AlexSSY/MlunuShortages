@@ -1,6 +1,7 @@
 package rx.dagger.mlunushortages.data
 
 import rx.dagger.mlunushortages.core.localDateFromEpoch
+import rx.dagger.mlunushortages.core.localDateToEpoch
 import rx.dagger.mlunushortages.domain.Schedule
 import rx.dagger.mlunushortages.domain.Shortages
 import rx.dagger.mlunushortages.domain.Slot
@@ -22,4 +23,21 @@ fun SlotDto.toDomain(): Slot {
         else -> State.GREEN
     }
     return Slot(domainState, i)
+}
+
+fun Shortages.toDto(): ShortagesDto {
+    return ShortagesDto(isGav, schedules.map { it.toDto() })
+}
+
+fun Schedule.toDto(): ScheduleDto {
+    return ScheduleDto(localDateToEpoch(date), slots.map { it.toDto() })
+}
+
+fun Slot.toDto(): SlotDto {
+    val dtoState = when (state) {
+        State.RED -> 1
+        State.YELLOW -> 2
+        State.GREEN -> 3
+    }
+    return SlotDto(dtoState, i)
 }

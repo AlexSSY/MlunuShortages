@@ -1,7 +1,5 @@
-package rx.dagger.mlunushortages
+package rx.dagger.mlunushortages.presentation
 
-import kotlinx.coroutines.CoroutineScope
-import java.time.Duration
 import java.time.LocalDateTime
 
 data class TimerState(
