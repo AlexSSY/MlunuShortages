@@ -10,6 +10,7 @@ import androidx.work.WorkManager
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.workmanager.factory.KoinWorkerFactory
 import org.koin.core.context.GlobalContext.startKoin
+import rx.dagger.mlunushortages.core.createNotificationChannel
 import rx.dagger.mlunushortages.di.dataModule
 import rx.dagger.mlunushortages.di.viewModelModule
 import rx.dagger.mlunushortages.di.workerModule

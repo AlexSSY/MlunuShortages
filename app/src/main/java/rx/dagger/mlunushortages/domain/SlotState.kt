@@ -1,5 +1,5 @@
 package rx.dagger.mlunushortages.domain
 
-enum class State {
+enum class SlotState {
     GREEN, YELLOW, RED
 }

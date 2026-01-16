@@ -1,7 +1,6 @@
-package rx.dagger.mlunushortages
+package rx.dagger.mlunushortages.presentation
 
 import java.time.LocalDateTime
-import java.time.LocalTime
 
 data class PeriodWithoutElectricity(
     val from: LocalDateTime,

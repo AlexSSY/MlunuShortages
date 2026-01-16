@@ -1,5 +1,6 @@
 package rx.dagger.mlunushortages.data
 
+import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -17,12 +18,13 @@ import java.time.LocalDateTime
 private val slotsUrl = "https://www.poe.pl.ua/customs/dynamicgpv-info.php"
 private val gavUrl = "https://www.poe.pl.ua/customs/dynamic-unloading-info.php"
 
-suspend fun downloadShortages(): ShortagesDto {
-    val isGav = fetchGavStatus()
-    val schedules = downloadSchedules()
+suspend fun downloadShortages(): ShortagesDto =
+        withContext(Dispatchers.IO) {
+        val isGav = fetchGavStatus()
+        val schedules = downloadSchedules()
 
-    return ShortagesDto(isGav, schedules)
-}
+        ShortagesDto(isGav, schedules)
+    }
 
 private fun downloadSchedules(): List<ScheduleDto> {
     val document = getDocumentFromUrl(slotsUrl)
@@ -88,6 +90,7 @@ private fun getDocumentFromUrl(url: String): Document {
             return document
         } catch (e: SocketTimeoutException) {
             // retry
+            Log.w("getDocumentFromUrl", "Timeout")
         }
     }
 

@@ -1,15 +1,16 @@
 package rx.dagger.mlunushortages.data
 
+import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import rx.dagger.mlunushortages.domain.Shortages
-import rx.dagger.mlunushortages.gson
-import rx.dagger.mlunushortages.toDto
+
+val gson = Gson()
 
 fun deserializeShortages(json: String): ShortagesDto =
     runCatching {
         gson.fromJson<ShortagesDto>(
             json,
-            object : TypeToken<ShortagesDto>() {}.type
+            ShortagesDto::class.java
+//            object : TypeToken<ShortagesDto>() {}.type
         )
     }.getOrElse {
         ShortagesDto(false, emptyList())

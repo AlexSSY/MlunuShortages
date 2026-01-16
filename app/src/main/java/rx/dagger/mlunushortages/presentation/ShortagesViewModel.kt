@@ -1,4 +1,4 @@
-package rx.dagger.mlunushortages
+package rx.dagger.mlunushortages.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -9,10 +9,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import rx.dagger.mlunushortages.presentation.PeriodWithoutElectricity
 import rx.dagger.mlunushortages.domain.Repository
-import rx.dagger.mlunushortages.presentation.TimerState
+import rx.dagger.mlunushortages.domain.Shortages
 import java.time.Duration
 import java.time.LocalDateTime
 
@@ -23,11 +25,24 @@ class ShortagesViewModel(
         update()
     }
 
-    val periodsFlow = shortagesRepository.periodsFlow
-    val isGav = isGavRepository.isGavFlow
+    private val shortagesFlow = repository.shortages
 
-    private val loadingStateFlow = MutableStateFlow(false)
-    val loadingStateFlowSafe = loadingStateFlow.asStateFlow()
+    val shortagesStateFlow = shortagesFlow.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = Shortages(false, emptyList())
+    )
+
+    val periodsWithoutElectricityStateFlow: StateFlow<List<PeriodWithoutElectricity>> =
+        shortagesFlow
+            .map { shortages ->
+                calculatePeriodsWithoutElectricity(shortages)
+            }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000),
+                initialValue = emptyList()
+            )
 
     val nowFlow = flow {
         while (true) {
@@ -36,54 +51,54 @@ class ShortagesViewModel(
         }
     }
 
-    val timerStateFlowSafe: StateFlow<TimerState> =
-        combine(nowFlow, periodsFlow) { now, periods ->
+    val timerStateFlow: StateFlow<TimerState> =
+        combine(nowFlow, periodsWithoutElectricityStateFlow) { now, periods ->
             calculateCurrentTimerState(now, periods)
         }.stateIn(
             viewModelScope,
-            SharingStarted.WhileSubscribed(5_000),
+            SharingStarted.Companion.WhileSubscribed(5_000),
             TimerState(true, null)
         )
 
     val periodsActualFlow: StateFlow<List<PeriodWithoutElectricity>> =
-        combine(nowFlow, periodsFlow) { now, periods ->
+        combine(nowFlow, periodsWithoutElectricityStateFlow) { now, periods ->
             periods
         }.stateIn(
             viewModelScope,
-            SharingStarted.WhileSubscribed(5_000),
+            SharingStarted.Companion.WhileSubscribed(5_000),
             emptyList()
         )
 
     val todayShortagesTotal: StateFlow<Float> =
-        combine(nowFlow, periodsFlow) { now, periods ->
+        combine(nowFlow, periodsWithoutElectricityStateFlow) { now, periods ->
             calculateTodayShortages(now, periods)
         }.stateIn(
             viewModelScope,
-            SharingStarted.WhileSubscribed(5_000),
+            SharingStarted.Companion.WhileSubscribed(5_000),
             0f
         )
 
     val todayPeriods: StateFlow<List<PeriodWithoutElectricity>> =
-        combine(nowFlow, periodsFlow) { now, periods ->
-            calculateTodayPeriods(now, periods)
+        combine(nowFlow, periodsWithoutElectricityStateFlow) { now, periods ->
+            periods.filter { it.from.dayOfMonth == now.dayOfMonth }
         }.stateIn(
             viewModelScope,
-            SharingStarted.WhileSubscribed(5_000),
+            SharingStarted.Companion.WhileSubscribed(5_000),
             emptyList()
         )
 
-    private fun calculateTodayPeriods(
-        now: LocalDateTime,
-        periods: List<PeriodWithoutElectricity>
-    ): List<PeriodWithoutElectricity> = periods.filter { it.from.dayOfMonth == now.dayOfMonth }
-
     fun update() {
         viewModelScope.launch {
-            shortagesRepository.updateAndNotify {
-                // Можно вызвать тот же showNotification(), если нужно
-            }
-            isGavRepository.updateAndNotify {
-                // Можно вызвать тот же showNotification(), если нужно
+            val shortages = runCatching {
+                repository.loadFromInternet()
+            }.getOrNull()
+
+            shortages?.let {
+                val cachedShortages = repository.loadFromCache()
+
+                if (cachedShortages != it) {
+                    repository.save(it)
+                }
             }
         }
     }
@@ -106,7 +121,7 @@ class ShortagesViewModel(
     }
 
     private fun calculateCurrentTimerState(now: LocalDateTime,
-        periods: List<PeriodWithoutElectricity>
+                                           periods: List<PeriodWithoutElectricity>
     ): TimerState {
         for (period in periods) {
             if (period.contains(now)) {
