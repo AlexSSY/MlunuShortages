@@ -14,8 +14,11 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import rx.dagger.mlunushortages.presentation.PeriodWithoutElectricity
 import rx.dagger.mlunushortages.domain.Repository
+import rx.dagger.mlunushortages.domain.Schedule
 import rx.dagger.mlunushortages.domain.Shortages
+import rx.dagger.mlunushortages.domain.SlotState
 import java.time.Duration
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 class ShortagesViewModel(
@@ -41,7 +44,7 @@ class ShortagesViewModel(
                 emptyList()
             )
 
-    private val nowFlow =
+    val nowFlow =
         flow {
             while (true) {
                 emit(LocalDateTime.now())
@@ -52,6 +55,71 @@ class ShortagesViewModel(
             SharingStarted.WhileSubscribed(5_000),
             LocalDateTime.now()
         )
+
+    val todaySchedule: StateFlow<Schedule> =
+        combine(nowFlow, shortagesStateFlow) { now, shortages ->
+            shortages.schedules.forEach { schedule ->
+                if (schedule.date.year == now.year &&
+                        schedule.date.monthValue == now.monthValue &&
+                        schedule.date.dayOfMonth == now.dayOfMonth) {
+                    return@combine schedule
+                }
+            }
+
+            Schedule(LocalDate.of(
+                now.year, now.monthValue, now.dayOfMonth
+            ), emptyList())
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = Schedule(LocalDate.now(), emptyList())
+        )
+
+    val tomorrowSchedule: StateFlow<Schedule?> =
+        combine(nowFlow, shortagesStateFlow) { now, shortages ->
+            val tomorrow = now.plusDays(1)
+            shortages.schedules.find { schedule ->
+                schedule.date.year == tomorrow.year &&
+                schedule.date.monthValue == tomorrow.monthValue &&
+                schedule.date.dayOfMonth == tomorrow.dayOfMonth
+            }
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = null
+        )
+
+    val todayChartSectors: StateFlow<List<ChartSector>> =
+        todaySchedule.map {
+            calculateChartSectors(it)
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = emptyList()
+        )
+
+    val tomorrowChartSectors: StateFlow<List<ChartSector>?> =
+        tomorrowSchedule.map { schedule ->
+            schedule?.let {
+                calculateChartSectors(it)
+            }
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = null
+        )
+
+    private fun calculateChartSectors(schedule: Schedule): List<ChartSector> {
+        return schedule.slots
+            .filter { slot ->
+                slot.slotState == SlotState.RED
+            }
+            .map { slot ->
+                val startHour = 30F * slot.i
+                val endHour = startHour + 30F
+                ChartSector(startHour, endHour)
+            }
+    }
 
     val timerStateFlow =
         combine(nowFlow, periodsWithoutElectricityStateFlow) { now, periods ->
@@ -68,7 +136,7 @@ class ShortagesViewModel(
             periods
         }.stateIn(
             viewModelScope,
-            SharingStarted.Companion.WhileSubscribed(5_000),
+            SharingStarted.WhileSubscribed(5_000),
             emptyList()
         )
 
@@ -77,7 +145,17 @@ class ShortagesViewModel(
             calculateTodayShortages(now, periods)
         }.stateIn(
             viewModelScope,
-            SharingStarted.Companion.WhileSubscribed(5_000),
+            SharingStarted.WhileSubscribed(5_000),
+            0f
+        )
+
+    val tomorrowShortagesTotal: StateFlow<Float> =
+        combine(nowFlow, periodsWithoutElectricityStateFlow) { now, periods ->
+            val tomorrow = now.plusDays(1)
+            calculateTodayShortages(tomorrow, periods)
+        }.stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5_000),
             0f
         )
 
@@ -86,7 +164,7 @@ class ShortagesViewModel(
             periods.filter { it.from.dayOfMonth == now.dayOfMonth }
         }.stateIn(
             viewModelScope,
-            SharingStarted.Companion.WhileSubscribed(5_000),
+            SharingStarted.WhileSubscribed(5_000),
             emptyList()
         )
 

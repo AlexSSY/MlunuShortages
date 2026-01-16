@@ -25,7 +25,7 @@ fun hourToAngle(hour: Int): Float =
 
 @Composable
 fun PowerOutageDonutChart(
-    periods: List<PeriodWithoutElectricity>,
+    chartSectors: List<ChartSector>,
     modifier: Modifier = Modifier,
     textColor: Color
 ) {
@@ -66,9 +66,11 @@ fun PowerOutageDonutChart(
         // ─────────────────────────────
         // 2️⃣ КРАСНЫЕ ПЕРИОДЫ
         // ─────────────────────────────
-        periods.forEach { period ->
-            val startHour = period.from.hour + period.from.minute / 60f
-            val endHour = period.to.hour + period.to.minute / 60f
+        chartSectors.forEach { sector ->
+//            val startHour = period.from.hour + period.from.minute / 60f
+//            val endHour = period.to.hour + period.to.minute / 60f
+            val startHour = sector.startHour / 60F
+            val endHour = sector.endHour / 60F
 
             val sweepHours =
                 if (endHour >= startHour) {
