@@ -1,8 +1,20 @@
 package rx.dagger.mlunushortages.presentation
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -12,10 +24,66 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import java.time.LocalDateTime
 import kotlin.math.cos
 import kotlin.math.sin
+
+@Composable
+fun PowerOutageDonutChartWidget(
+    todayDateTime: LocalDateTime? = null,
+    todayChartSectors: List<ChartSector>,
+    todayTotalShortages: Float
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(360.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        DonutChart(
+            chartSectors = todayChartSectors,
+            textColor = Color.White
+        )
+        todayDateTime?.let {
+            TimeArrow(
+                modifier = Modifier.fillMaxSize(),
+                arrowColor = Color(0xFFFFE66B),
+                it
+            )
+        }
+        Box(
+            modifier = Modifier
+                .size(140.dp)
+                .background(
+                    color = MaterialTheme.colorScheme.background,
+                    shape = CircleShape
+                )
+                .border(
+                    width = 3.dp,
+                    color = Color(0xFFFFE66B),
+                    shape = CircleShape
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Text(
+                    text = "-${todayTotalShortages}",
+                    color = Color.Red,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "+${24 - todayTotalShortages}",
+                    color = Color.Green,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+    }
+}
 
 private const val HOURS_IN_DAY = 24
 private const val DEGREES_PER_HOUR = 360f / HOURS_IN_DAY
@@ -24,7 +92,7 @@ fun hourToAngle(hour: Int): Float =
     hour * DEGREES_PER_HOUR - 90f
 
 @Composable
-fun PowerOutageDonutChart(
+fun DonutChart(
     chartSectors: List<ChartSector>,
     modifier: Modifier = Modifier,
     textColor: Color

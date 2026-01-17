@@ -35,7 +35,7 @@ class ShortagesWorker(
 
                 repository.save(it)
             }
-        }
+        } ?: Log.d("ShortagesWorker", "fresh shortages are not downloaded for some reason")
 
         return Result.success()
     }

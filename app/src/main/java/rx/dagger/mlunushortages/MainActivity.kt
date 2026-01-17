@@ -10,7 +10,7 @@ import rx.dagger.mlunushortages.presentation.theme.MlunuShortagesTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+//        enableEdgeToEdge()
         setContent {
             MlunuShortagesTheme {
                 Screen()

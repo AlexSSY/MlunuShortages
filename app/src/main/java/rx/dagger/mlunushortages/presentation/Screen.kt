@@ -35,9 +35,9 @@ fun Screen() {
     val shortages = shortagesViewModel.shortagesStateFlow.collectAsState()
     val timerState = shortagesViewModel.timerStateFlow.collectAsState()
     val todayChartSectors = shortagesViewModel.todayChartSectors.collectAsState()
-    val tomorrowChartSectors = shortagesViewModel.tomorrowChartSectors.collectAsState()
     val nowState = shortagesViewModel.nowFlow.collectAsState()
     val todayTotalShortages = shortagesViewModel.todayShortagesTotal.collectAsState()
+    val tomorrowChartSectors = shortagesViewModel.tomorrowChartSectors.collectAsState()
     val tomorrowTotalShortages = shortagesViewModel.tomorrowShortagesTotal.collectAsState()
     val scrollState = rememberScrollState()
 
@@ -55,92 +55,29 @@ fun Screen() {
             GavWidget(
                 modifier = Modifier
                     .fillMaxWidth(),
-                isGav = !shortages.value.isGav
+                isGav = shortages.value.isGav
             )
             TimerWidget(
                 modifier = Modifier
                     .fillMaxWidth(),
                 timerState = timerState.value
             )
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(360.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                PowerOutageDonutChart(
-                    chartSectors = todayChartSectors.value,
-                    textColor = Color.White
-                )
-                TimeArrow(
-                    modifier = Modifier.fillMaxSize(),
-                    arrowColor = Color(0xFFFFE66B),
-                    nowState.value
-                )
-                Box(
-                    modifier = Modifier
-                        .size(140.dp)
-                        .background(
-                            color = MaterialTheme.colorScheme.background,
-                            shape = CircleShape
-                        )
-                        .border(
-                            width = 3.dp,
-                            color = Color(0xFFFFE66B),
-                            shape = CircleShape
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Text(
-                            text = "-${todayTotalShortages.value}",
-                            color = Color.Red,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = "+${24 - todayTotalShortages.value}",
-                            color = Color.Green,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-            }
-            if (tomorrowChartSectors.value != null) {
+            PowerOutageDonutChartWidget(
+                todayDateTime = nowState.value,
+                todayChartSectors = todayChartSectors.value,
+                todayTotalShortages = todayTotalShortages.value
+            )
+            tomorrowChartSectors.value?.let {
                 Text(
                     modifier = Modifier
                         .fillMaxWidth(),
-                    text = "Tomorrow schedule:",
+                    text = "График на завтра:",
                     textAlign = TextAlign.Center
                 )
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(360.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    PowerOutageDonutChart(
-                        chartSectors = tomorrowChartSectors.value!!,
-                        textColor = Color.Black
-                    )
-                    Box(
-                        modifier = Modifier
-                            .size(120.dp)
-                            .background(
-                                color = MaterialTheme.colorScheme.background,
-                                shape = CircleShape
-                            )
-                            .border(
-                                width = 3.dp,
-                                color = MaterialTheme.colorScheme.onBackground,
-                                shape = CircleShape
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text("-${tomorrowTotalShortages.value} +${24 - tomorrowTotalShortages.value}")
-                    }
-                }
+                PowerOutageDonutChartWidget(
+                    todayChartSectors = it,
+                    todayTotalShortages = tomorrowTotalShortages.value
+                )
             }
         }
     }

@@ -25,9 +25,9 @@ class Notifier(
     }
 
     fun notifyGav(isGavEnabled: Boolean) {
-        val title = "GAV Status"
+        val title = "Млини свет: ГАВ"
         val message =
-            if (isGavEnabled) "GAV is implemented"
+            if (isGavEnabled) "В Млинах ввели графiк аварiйних вiдключень"
             else "GAV is cancelled"
 
         showNotification(
@@ -40,16 +40,16 @@ class Notifier(
     fun notifyTodayScheduleChanged() {
         showNotification(
             id = 2,
-            title = "Schedule updated",
-            message = "Today schedule was changed"
+            title = "Млини свет: графiк",
+            message = "Сьогодняшнiй графiк змiнився"
         )
     }
 
     fun notifyTomorrowScheduleAvailable() {
         showNotification(
             id = 3,
-            title = "Schedule available",
-            message = "Tomorrow schedule is enabled"
+            title = "Млини свет: графiк на завтра",
+            message = "Появився графiк на завтра"
         )
     }
 
