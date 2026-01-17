@@ -44,7 +44,7 @@ fun PowerOutageDonutChart(
         // ─────────────────────────────
         repeat(24) { hour ->
             drawArc(
-                color = Color(0xFFAEEED0),
+                color = Color(0xFF008A54),
                 startAngle = hourToAngle(hour),
                 sweepAngle = DEGREES_PER_HOUR,
                 useCenter = false,
@@ -80,7 +80,7 @@ fun PowerOutageDonutChart(
                 }
 
             drawArc(
-                color = Color(0xFFD16A6A),
+                color = Color(0xFF814141),
                 startAngle = startHour * DEGREES_PER_HOUR - 90f,
                 sweepAngle = sweepHours * DEGREES_PER_HOUR,
                 useCenter = false,

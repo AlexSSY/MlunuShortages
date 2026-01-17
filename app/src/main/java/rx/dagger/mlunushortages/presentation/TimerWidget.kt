@@ -45,7 +45,12 @@ fun TimerWidget(modifier: Modifier, timerState: TimerState) {
                 color = Color.Transparent,
                 shape = shape
             )
-            .padding(8.dp)
+            .padding(
+                start = 16.dp,
+                top = 8.dp,
+                bottom = 8.dp,
+                end = 8.dp
+            )
     ) {
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -59,14 +64,16 @@ fun TimerWidget(modifier: Modifier, timerState: TimerState) {
 
                 Row() {
                     Text(
-                        text = if (isElectricity) "Power ON" else "Power OFF",
+                        text = if (isElectricity) "Свет должен быть" else "Света не должно быть",
                         fontSize = 12.sp,
-                        lineHeight = 1.sp
+                        lineHeight = 1.sp,
+                        fontWeight = FontWeight.Bold  ,
+                        color = if (isElectricity) Color.Green else Color.Red
                     )
                 }
                 Row() {
                     Text(
-                        text = if (isElectricity) "Turning OFF:" else "Turning ON:",
+                        text = if (isElectricity) "Выключат через:" else "Включат через:",
                         lineHeight = 1.sp
                     )
                 }
@@ -96,9 +103,9 @@ fun TimerWidget(modifier: Modifier, timerState: TimerState) {
                         val minutes = (totalSeconds % 3600) / 60
                         val seconds = totalSeconds % 60
 
-                        NumberBox(value = hours, label = "HOUR")
-                        NumberBox(value = minutes, label = "MIN")
-                        NumberBox(value = seconds, label = "SEC")
+                        NumberBox(value = hours, label = "ЧАС")
+                        NumberBox(value = minutes, label = "МИН")
+                        NumberBox(value = seconds, label = "СЕК")
                     } else {
                         Text("No Data")
                     }

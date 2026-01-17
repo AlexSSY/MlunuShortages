@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -28,20 +29,22 @@ fun GavWidget(
                 .fillMaxWidth()
                 .padding(8.dp)
                 .border(
-                    color= MaterialTheme.colorScheme.surfaceContainer,
+                    color= Color(0xFF913434),
                     width = 1.dp,
                     shape = shape
                 )
                 .background(
-                    color = Color(0xffffc9c9),
+                    color = Color(0xFF913434),
                     shape = shape
                 )
                 .padding(8.dp),
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "Emergency Power Shortages",
-                fontSize = 14.sp
+                text = "Ававрийные отключения",
+                fontSize = 14.sp,
+                color = Color.White,
+                fontWeight = FontWeight.SemiBold
             )
         }
     }

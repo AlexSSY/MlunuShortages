@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -22,6 +23,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
@@ -53,7 +55,7 @@ fun Screen() {
             GavWidget(
                 modifier = Modifier
                     .fillMaxWidth(),
-                isGav = shortages.value.isGav
+                isGav = !shortages.value.isGav
             )
             TimerWidget(
                 modifier = Modifier
@@ -68,28 +70,41 @@ fun Screen() {
             ) {
                 PowerOutageDonutChart(
                     chartSectors = todayChartSectors.value,
-                    textColor = Color.Black
+                    textColor = Color.White
                 )
                 TimeArrow(
                     modifier = Modifier.fillMaxSize(),
-                    arrowColor = MaterialTheme.colorScheme.onBackground,
+                    arrowColor = Color(0xFFFFE66B),
                     nowState.value
                 )
                 Box(
                     modifier = Modifier
-                        .size(120.dp)
+                        .size(140.dp)
                         .background(
                             color = MaterialTheme.colorScheme.background,
                             shape = CircleShape
                         )
                         .border(
                             width = 3.dp,
-                            color = MaterialTheme.colorScheme.onBackground,
+                            color = Color(0xFFFFE66B),
                             shape = CircleShape
                         ),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("-${todayTotalShortages.value} +${24 - todayTotalShortages.value}")
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Text(
+                            text = "-${todayTotalShortages.value}",
+                            color = Color.Red,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "+${24 - todayTotalShortages.value}",
+                            color = Color.Green,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
             if (tomorrowChartSectors.value != null) {
