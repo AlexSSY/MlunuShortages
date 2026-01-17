@@ -17,12 +17,14 @@ import rx.dagger.mlunushortages.domain.Repository
 import rx.dagger.mlunushortages.domain.Schedule
 import rx.dagger.mlunushortages.domain.Shortages
 import rx.dagger.mlunushortages.domain.SlotState
+import rx.dagger.mlunushortages.infrastructure.Notifier
 import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalDateTime
 
 class ShortagesViewModel(
-    private val repository: Repository
+    private val repository: Repository,
+    private val notifier: Notifier
 ): ViewModel() {
     init {
         update()

@@ -8,7 +8,8 @@ val viewModelModule = module {
 
     viewModel {
         ShortagesViewModel(
-            repository = get()
+            repository = get(),
+            notifier = get()
         )
     }
 }
