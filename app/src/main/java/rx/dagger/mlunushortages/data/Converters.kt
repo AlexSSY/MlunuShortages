@@ -10,7 +10,12 @@ import java.time.LocalDateTime
 import java.time.ZoneId
 
 fun ShortagesDto.toDomain(): Shortages {
-    return Shortages(isGav, schedules.map { it.toDomain() })
+    val schedulesDomain = schedules.map { it.toDomain() }
+    return Shortages(
+        isGav,
+        schedulesDomain,
+        calculatePeriodsWithoutElectricity(schedulesDomain)
+    )
 }
 
 fun ScheduleDto.toDomain(): Schedule {

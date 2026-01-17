@@ -7,8 +7,14 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
+import rx.dagger.mlunushortages.domain.PeriodWithoutElectricity
+import rx.dagger.mlunushortages.domain.Schedule
+import rx.dagger.mlunushortages.domain.Shortages
+import rx.dagger.mlunushortages.domain.SlotState
 import java.net.SocketTimeoutException
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
 
 private val slotsUrl = "https://www.poe.pl.ua/customs/dynamicgpv-info.php"
 private val gavUrl = "https://www.poe.pl.ua/customs/dynamic-unloading-info.php"
@@ -143,4 +149,42 @@ private fun downloadJson(url: String): String {
         "Failed to connect after 3 retries",
         SocketTimeoutException()
     )
+}
+
+fun calculatePeriodsWithoutElectricity(
+    schedules: List<Schedule>
+): List<PeriodWithoutElectricity> {
+    val result = mutableListOf<PeriodWithoutElectricity>()
+    val minutesPerSlot = 30L
+
+    schedules.forEach { schedule ->
+        var fromTime: LocalDateTime? = null
+        var lastSlotTime: LocalDateTime? = null
+        val dayStart = LocalDateTime.of(schedule.date, LocalTime.MIDNIGHT)
+
+        schedule.slots.forEach { slot ->
+            val slotTime = dayStart.plusMinutes(slot.i * minutesPerSlot)
+            lastSlotTime = slotTime
+
+            when {
+                slot.slotState == SlotState.RED && fromTime == null -> {
+                    // Начало нового периода
+                    fromTime = slotTime
+                }
+
+                slot.slotState != SlotState.RED && fromTime != null -> {
+                    // Конец периода
+                    result.add(PeriodWithoutElectricity(fromTime, slotTime))
+                    fromTime = null
+                }
+            }
+        }
+
+        // Если день закончился, а период ещё открыт — закрываем его последним слотом
+        fromTime?.let { start ->
+            result.add(PeriodWithoutElectricity(start, lastSlotTime ?: start))
+        }
+    }
+
+    return result
 }

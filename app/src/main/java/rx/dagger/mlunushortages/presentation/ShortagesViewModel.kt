@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import rx.dagger.mlunushortages.presentation.PeriodWithoutElectricity
+import rx.dagger.mlunushortages.domain.PeriodWithoutElectricity
 import rx.dagger.mlunushortages.domain.Repository
 import rx.dagger.mlunushortages.domain.Schedule
 import rx.dagger.mlunushortages.domain.Shortages
@@ -221,5 +221,9 @@ class ShortagesViewModel(
             isElectricityAvailable = true,
             timeRemaining = nearestPeriod?.from
         )
+    }
+    
+    private fun createAlarms(periods: List<PeriodWithoutElectricity>) {
+        
     }
 }

@@ -91,4 +91,12 @@ class Notifier(
             manager.createNotificationChannel(channel)
         }
     }
+
+    fun notifyTenMinutesBeforePowerOff() {
+        showNotification(
+            id = 4,
+            title = "Млини свет",
+            message = "Виключать свет через 10 минут!!!"
+        )
+    }
 }
