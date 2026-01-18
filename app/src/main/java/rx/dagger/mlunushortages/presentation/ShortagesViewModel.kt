@@ -1,5 +1,6 @@
 package rx.dagger.mlunushortages.presentation
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.delay
@@ -9,6 +10,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.lastOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -17,29 +19,34 @@ import rx.dagger.mlunushortages.domain.Repository
 import rx.dagger.mlunushortages.domain.Schedule
 import rx.dagger.mlunushortages.domain.Shortages
 import rx.dagger.mlunushortages.domain.SlotState
+import rx.dagger.mlunushortages.infrastructure.AlarmScheduler
 import rx.dagger.mlunushortages.infrastructure.Notifier
 import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalDateTime
 
 class ShortagesViewModel(
+    context: Context,
     private val repository: Repository,
     private val notifier: Notifier
 ): ViewModel() {
+
     init {
         update()
     }
+
+    private val alarmScheduler = AlarmScheduler(context)
 
     val shortagesStateFlow = repository.shortages
         .stateIn(
             viewModelScope,
             SharingStarted.WhileSubscribed(5_000),
-            Shortages(false, emptyList())
+            Shortages(false, emptyList(), emptyList())
         )
 
     val periodsWithoutElectricityStateFlow =
         shortagesStateFlow
-            .map { calculatePeriodsWithoutElectricity(it) }
+            .map { it.periods }
             .stateIn(
                 viewModelScope,
                 SharingStarted.WhileSubscribed(5_000),

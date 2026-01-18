@@ -28,7 +28,7 @@ class Notifier(
         val title = "Млини свет: ГАВ"
         val message =
             if (isGavEnabled) "В Млинах ввели графiк аварiйних вiдключень"
-            else "GAV is cancelled"
+            else "Графiк погодинних вiдключеннь в Млинах скасовано"
 
         showNotification(
             id = 1,

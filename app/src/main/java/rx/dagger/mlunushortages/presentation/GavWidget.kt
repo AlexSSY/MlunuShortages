@@ -41,7 +41,7 @@ fun GavWidget(
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "Ававрийные отключения",
+                text = "Аварийные отключения",
                 fontSize = 14.sp,
                 color = Color.White,
                 fontWeight = FontWeight.SemiBold

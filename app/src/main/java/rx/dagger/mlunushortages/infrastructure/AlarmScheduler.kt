@@ -4,6 +4,8 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.os.Build
+import android.util.Log
 import rx.dagger.mlunushortages.domain.PeriodWithoutElectricity
 import java.time.ZoneId
 
@@ -19,17 +21,30 @@ class AlarmScheduler(
         periods.forEachIndexed { index, period ->
             val triggerAt =
                 period.from
-                    .minusMinutes(10)
+                    .minusMinutes(3)
                     .atZone(ZoneId.systemDefault())
                     .toInstant()
                     .toEpochMilli()
 
             if (triggerAt > System.currentTimeMillis()) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    if (!alarmManager.canScheduleExactAlarms()) {
+                        alarmManager.set(
+                            AlarmManager.RTC_WAKEUP,
+                            triggerAt,
+                            pendingIntent(index, period)
+                        )
+                        Log.d("AlarmScheduler", "scheduled INEXACT alarm")
+                        return@forEachIndexed
+                    }
+                }
                 alarmManager.setExactAndAllowWhileIdle(
                     AlarmManager.RTC_WAKEUP,
                     triggerAt,
                     pendingIntent(index, period)
                 )
+
+                Log.d("AlarmScheduler", "scheduled: $index - $triggerAt")
             }
         }
     }
