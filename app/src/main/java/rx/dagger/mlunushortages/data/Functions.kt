@@ -9,7 +9,6 @@ import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import rx.dagger.mlunushortages.domain.PeriodWithoutElectricity
 import rx.dagger.mlunushortages.domain.Schedule
-import rx.dagger.mlunushortages.domain.Shortages
 import rx.dagger.mlunushortages.domain.SlotState
 import java.net.SocketTimeoutException
 import java.time.LocalDate
@@ -28,7 +27,7 @@ suspend fun downloadShortages(): ShortagesDto =
     }
 
 private fun downloadSchedules(): List<ScheduleDto> {
-    val document = getDocumentFromUrl(slotsUrl)
+    val document = getDocumentFromUrl()
 
     val schedules = mutableListOf<ScheduleDto>()
     val dateNumbers = mutableMapOf<LocalDate, List<Int>>()
@@ -52,7 +51,7 @@ private fun downloadSchedules(): List<ScheduleDto> {
                 firstClass.split("light_").last().toInt()
             }
         } catch (e: NoSuchElementException) {
-            throw InvalidHtmlForParsing("Failed to parse numbers")
+            throw InvalidHtmlForParsing("Failed to parse numbers", e)
         }
         dateNumbers[date] = numbers
     }
@@ -79,17 +78,17 @@ private fun downloadSchedules(): List<ScheduleDto> {
 }
 
 private suspend fun fetchGavStatus(): Boolean = withContext(Dispatchers.IO) {
-    val json = downloadJson(gavUrl)
+    val json = downloadJson()
     val hasGAV = json.contains("\"unloadingtypename\":\"ГАВ\"")
     hasGAV
 }
 
-private fun getDocumentFromUrl(url: String): Document {
+private fun getDocumentFromUrl(): Document {
     repeat(3) {
         try {
-            val document = Jsoup.connect(url).get()
+            val document = Jsoup.connect(slotsUrl).get()
             return document
-        } catch (e: SocketTimeoutException) {
+        } catch (_: SocketTimeoutException) {
             // retry
             Log.w("getDocumentFromUrl", "Timeout")
         }
@@ -124,11 +123,11 @@ private fun parseUaDate(uaDateString: String): LocalDate {
     return LocalDate.of(year, month, day)
 }
 
-private fun downloadJson(url: String): String {
+private fun downloadJson(): String {
     val client = OkHttpClient()
 
     val request = Request.Builder()
-        .url(url)
+        .url(gavUrl)
         .get()
         .build()
 
@@ -140,7 +139,7 @@ private fun downloadJson(url: String): String {
                 }
                 response.body?.string() ?: ""
             }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             // retry
         }
     }
@@ -157,9 +156,10 @@ fun calculatePeriodsWithoutElectricity(
     val result = mutableListOf<PeriodWithoutElectricity>()
     val minutesPerSlot = 30L
 
+    var fromTime: LocalDateTime? = null
+    var lastSlotTime: LocalDateTime? = null
+
     schedules.forEach { schedule ->
-        var fromTime: LocalDateTime? = null
-        var lastSlotTime: LocalDateTime? = null
         val dayStart = LocalDateTime.of(schedule.date, LocalTime.MIDNIGHT)
 
         schedule.slots.forEach { slot ->
@@ -174,16 +174,16 @@ fun calculatePeriodsWithoutElectricity(
 
                 slot.slotState != SlotState.RED && fromTime != null -> {
                     // Конец периода
-                    result.add(PeriodWithoutElectricity(fromTime, slotTime))
+                    result.add(PeriodWithoutElectricity(fromTime!!, slotTime))
                     fromTime = null
                 }
             }
         }
 
-        // Если день закончился, а период ещё открыт — закрываем его последним слотом
-        fromTime?.let { start ->
-            result.add(PeriodWithoutElectricity(start, lastSlotTime ?: start))
-        }
+    }
+
+    fromTime?.let { start ->
+        result.add(PeriodWithoutElectricity(start, lastSlotTime ?: start))
     }
 
     return result
