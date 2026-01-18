@@ -1,6 +1,7 @@
 package rx.dagger.mlunushortages.presentation
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.delay
@@ -181,7 +182,10 @@ class ShortagesViewModel(
         viewModelScope.launch {
             val shortages = runCatching {
                 repository.loadFromInternet()
-            }.getOrNull()
+            }.getOrElse { exception ->
+                Log.e("ShortagesViewModel::update", exception.message, exception)
+                null
+            }
 
             shortages?.let {
                 val cachedShortages = repository.loadFromCache()

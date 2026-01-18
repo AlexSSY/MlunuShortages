@@ -7,6 +7,7 @@ import android.content.Intent
 import android.os.Build
 import android.util.Log
 import rx.dagger.mlunushortages.domain.PeriodWithoutElectricity
+import java.time.LocalDateTime
 import java.time.ZoneId
 
 class AlarmScheduler(
@@ -20,7 +21,8 @@ class AlarmScheduler(
 
         periods.forEachIndexed { index, period ->
             val triggerAt =
-                period.from
+//                period.from
+                LocalDateTime.now().plusSeconds(60)
                     .minusMinutes(3)
                     .atZone(ZoneId.systemDefault())
                     .toInstant()
@@ -45,6 +47,7 @@ class AlarmScheduler(
                 )
 
                 Log.d("AlarmScheduler", "scheduled: $index - $triggerAt")
+                return
             }
         }
     }

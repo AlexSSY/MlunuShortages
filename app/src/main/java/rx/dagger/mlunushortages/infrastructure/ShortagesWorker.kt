@@ -17,7 +17,10 @@ class ShortagesWorker(
 
         val freshShortages = runCatching {
             repository.loadFromInternet()
-        }.getOrNull()
+        }.getOrElse { exception ->
+            Log.e("ShortagesWorker::doWork", exception.message, exception)
+            null
+        }
 
         freshShortages?.let {
             val cachedShortages = repository.loadFromCache()
@@ -35,7 +38,7 @@ class ShortagesWorker(
 
                 repository.save(it)
             }
-        } ?: Log.d("ShortagesWorker", "fresh shortages are not downloaded for some reason")
+        } ?: Log.d("ShortagesWorker", "fresh shortages are not downloaded for reason above")
 
         return Result.success()
     }

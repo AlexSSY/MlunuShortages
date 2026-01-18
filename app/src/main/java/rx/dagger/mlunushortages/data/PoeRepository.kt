@@ -1,6 +1,7 @@
 package rx.dagger.mlunushortages.data
 
 import android.content.Context
+import android.util.Log
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.flow.Flow
@@ -31,9 +32,15 @@ class PoeRepository(
         }.firstOrNull() ?: Shortages(false, emptyList(), emptyList())
 
     override suspend fun loadFromInternet(): Shortages {
-        val shortages =downloadShortages().toDomain()
+        val shortages = downloadShortages().toDomain()
         val periodsWithoutElectricity = shortages.periods
-        alarmScheduler.schedule(periodsWithoutElectricity)
+        runCatching {
+            alarmScheduler.schedule(periodsWithoutElectricity)
+        }.onFailure {
+            Log.e("PoeRepository", "Failed to schedule alarms")
+        }
+
+        Log.d("PoeRepository", "loadFromInternet - success")
         return shortages
     }
 
