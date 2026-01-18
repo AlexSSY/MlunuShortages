@@ -28,7 +28,8 @@ class AlarmScheduler(
                     .toInstant()
                     .toEpochMilli()
 
-            if (triggerAt > System.currentTimeMillis()) {
+//            if (triggerAt > System.currentTimeMillis()) {
+            if (true) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     if (!alarmManager.canScheduleExactAlarms()) {
                         alarmManager.set(
@@ -37,10 +38,10 @@ class AlarmScheduler(
                             pendingIntent(index, period)
                         )
                         Log.d("AlarmScheduler", "scheduled INEXACT alarm")
-                        return@forEachIndexed
+                        return
                     }
                 }
-                alarmManager.setExactAndAllowWhileIdle(
+                alarmManager.setAndAllowWhileIdle(
                     AlarmManager.RTC_WAKEUP,
                     triggerAt,
                     pendingIntent(index, period)
