@@ -13,11 +13,10 @@ import rx.dagger.mlunushortages.infrastructure.AlarmScheduler
 
 class PoeRepository(
     context: Context,
+    private val alarmScheduler: AlarmScheduler
 ) : Repository {
     private val datastoreKey = stringPreferencesKey("shortages")
     private val dataStore = context.dataStore
-
-    private val alarmScheduler = AlarmScheduler(context)
 
     override val shortages: Flow<Shortages> =
         dataStore.data.map { prefs ->

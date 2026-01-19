@@ -10,6 +10,7 @@ import androidx.work.WorkManager
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.workmanager.factory.KoinWorkerFactory
 import org.koin.core.context.GlobalContext.startKoin
+import rx.dagger.mlunushortages.di.alarmScheduler
 import rx.dagger.mlunushortages.di.dataModule
 import rx.dagger.mlunushortages.di.notifierModule
 import rx.dagger.mlunushortages.di.viewModelModule
@@ -26,7 +27,8 @@ class App : Application(), Configuration.Provider {
                 dataModule,
                 viewModelModule,
                 workerModule,
-                notifierModule
+                notifierModule,
+                alarmScheduler
             )
         }
     }

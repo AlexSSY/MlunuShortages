@@ -7,7 +7,6 @@ import android.content.Intent
 import android.os.Build
 import android.util.Log
 import rx.dagger.mlunushortages.domain.PeriodWithoutElectricity
-import java.time.LocalDateTime
 import java.time.ZoneId
 
 class AlarmScheduler(
@@ -21,51 +20,62 @@ class AlarmScheduler(
 
         periods.forEachIndexed { index, period ->
             val triggerAt =
-//                period.from
-                LocalDateTime.now().plusSeconds(60)
-                    .minusMinutes(3)
+                period.from
+                    .minusMinutes(10)
                     .atZone(ZoneId.systemDefault())
                     .toInstant()
                     .toEpochMilli()
 
-//            if (triggerAt > System.currentTimeMillis()) {
-            if (true) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    if (!alarmManager.canScheduleExactAlarms()) {
-                        alarmManager.set(
-                            AlarmManager.RTC_WAKEUP,
-                            triggerAt,
-                            pendingIntent(index, period)
-                        )
-                        Log.d("AlarmScheduler", "scheduled INEXACT alarm")
-                        return
-                    }
-                }
-                alarmManager.setAndAllowWhileIdle(
-                    AlarmManager.RTC_WAKEUP,
-                    triggerAt,
-                    pendingIntent(index, period)
-                )
+            if (triggerAt > System.currentTimeMillis()) {
+                val canExact =
+                    Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
+                            alarmManager.canScheduleExactAlarms()
 
-                Log.d("AlarmScheduler", "scheduled: $index - $triggerAt")
-                return
+                if (canExact) {
+                    alarmManager.setExactAndAllowWhileIdle(
+                        AlarmManager.RTC_WAKEUP,
+                        triggerAt,
+                        pendingIntent(index)
+                    )
+                    Log.d("AlarmScheduler", "scheduled: $index - $triggerAt")
+                } else {
+                    alarmManager.setAndAllowWhileIdle(
+                        AlarmManager.RTC_WAKEUP,
+                        triggerAt,
+                        pendingIntent(index)
+                    )
+                    Log.d("AlarmScheduler", "scheduled INEXACT alarm")
+                }
             }
         }
     }
 
     private fun pendingIntent(
-        id: Int,
-        period: PeriodWithoutElectricity
+        id: Int
     ): PendingIntent =
         PendingIntent.getBroadcast(
             context,
             id,
-            Intent(context, PowerOffAlarmReceiver::class.java)
-                .putExtra("start", period.from.toString()),
+            alarmIntent(),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
     private fun cancelAll() {
-        // отменить старые алармы
+        for (i in 0 until 48) {
+            val pi = PendingIntent.getBroadcast(
+                context,
+                i,
+                alarmIntent(),
+                PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+            ) ?: continue
+
+            alarmManager.cancel(pi)
+            pi.cancel()
+            Log.d("AlarmScheduler", "cancelled alarm $i")
+        }
     }
+
+    private fun alarmIntent(): Intent =
+        Intent(context, PowerOffAlarmReceiver::class.java)
+            .apply { action = "rx.dagger.mlunushortages.POWER_OFF_ALARM" }
 }
