@@ -6,15 +6,15 @@ import rx.dagger.mlunushortages.domain.Slot
 import rx.dagger.mlunushortages.domain.SlotState
 import java.time.Instant
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.ZoneId
 
 fun ShortagesDto.toDomain(): Shortages {
     val schedulesDomain = schedules.map { it.toDomain() }
+    val periods = calculatePeriodsWithoutElectricity(schedulesDomain)
     return Shortages(
         isGav,
         schedulesDomain,
-        calculatePeriodsWithoutElectricity(schedulesDomain)
+        periods
     )
 }
 
@@ -49,18 +49,18 @@ fun Slot.toDto(): SlotDto {
     return SlotDto(dtoState, i)
 }
 
-fun localDateTimeToEpoch(localDateTime: LocalDateTime): Long {
-    val zone = ZoneId.systemDefault()
-    return localDateTime.atZone(zone).toEpochSecond()
-}
-
-fun localDateTimeFromEpoch(ePoch: Long): LocalDateTime {
-    val zone = ZoneId.systemDefault()
-    return LocalDateTime.ofInstant(
-        Instant.ofEpochSecond(ePoch),
-        zone
-    )
-}
+//fun localDateTimeToEpoch(localDateTime: LocalDateTime): Long {
+//    val zone = ZoneId.systemDefault()
+//    return localDateTime.atZone(zone).toEpochSecond()
+//}
+//
+//fun localDateTimeFromEpoch(ePoch: Long): LocalDateTime {
+//    val zone = ZoneId.systemDefault()
+//    return LocalDateTime.ofInstant(
+//        Instant.ofEpochSecond(ePoch),
+//        zone
+//    )
+//}
 
 fun localDateToEpoch(localDate: LocalDate): Long {
     val zone = ZoneId.systemDefault()
@@ -77,6 +77,6 @@ fun localDateFromEpoch(epoch: Long): LocalDate {
         .toLocalDate()
 }
 
-fun LocalDateTime.toMinutesOfDay(): Int {
-    return hour * 60 + minute
-}
+//fun LocalDateTime.toMinutesOfDay(): Int {
+//    return hour * 60 + minute
+//}
