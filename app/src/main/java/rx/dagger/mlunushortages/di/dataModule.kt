@@ -10,7 +10,8 @@ val dataModule = module {
 
     single<Repository> {
         PoeRepository(
-            context = androidContext()
+            context = androidContext(),
+            alarmScheduler = get()
         )
     }
 }

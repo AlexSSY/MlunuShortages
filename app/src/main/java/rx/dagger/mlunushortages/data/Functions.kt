@@ -183,7 +183,9 @@ fun calculatePeriodsWithoutElectricity(
     }
 
     fromTime?.let { start ->
-        result.add(PeriodWithoutElectricity(start, lastSlotTime ?: start))
+        result.add(PeriodWithoutElectricity(
+            start, lastSlotTime?.plusMinutes(minutesPerSlot) ?: start)
+        )
     }
 
     return result
