@@ -137,8 +137,8 @@ fun DonutChart(
         chartSectors.forEach { sector ->
 //            val startHour = period.from.hour + period.from.minute / 60f
 //            val endHour = period.to.hour + period.to.minute / 60f
-            val startHour = sector.startHour / 60F
-            val endHour = sector.endHour / 60F
+            val startHour = sector.startHourInMinutes / 60F
+            val endHour = sector.endHourInMinutes / 60F
 
             val sweepHours =
                 if (endHour >= startHour) {
