@@ -5,13 +5,10 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.lastOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -208,8 +205,8 @@ class ShortagesViewModel(
             totalSeconds += duration.seconds
         }
 
-        val totalMinutes = totalSeconds / 60
-        val totalHours = totalMinutes / 60f
+        val totalMinutes = totalSeconds / 60F
+        val totalHours = totalMinutes / 60F
 
         return totalHours
     }
@@ -232,9 +229,5 @@ class ShortagesViewModel(
             isElectricityAvailable = true,
             timeRemaining = nearestPeriod?.from
         )
-    }
-    
-    private fun createAlarms(periods: List<PeriodWithoutElectricity>) {
-        
     }
 }
