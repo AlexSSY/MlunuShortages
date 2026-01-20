@@ -1,6 +1,7 @@
 package rx.dagger.mlunushortages.presentation
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,10 +12,13 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
+import java.time.Duration
+import java.time.format.DateTimeFormatter
 
 @Composable
 fun Screen() {
@@ -26,6 +30,7 @@ fun Screen() {
     val todayTotalShortages = shortagesViewModel.todayShortagesTotal.collectAsState()
     val tomorrowChartSectors = shortagesViewModel.tomorrowChartSectors.collectAsState()
     val tomorrowTotalShortages = shortagesViewModel.tomorrowShortagesTotal.collectAsState()
+    val periodsWithElectricity = shortagesViewModel.periodsWithElectricity.collectAsState()
     val scrollState = rememberScrollState()
 
     Scaffold(
@@ -49,29 +54,32 @@ fun Screen() {
                     .fillMaxWidth(),
                 timerState = timerState.value
             )
-//            Box(
-//                modifier = Modifier.fillMaxWidth(),
-//                contentAlignment = Alignment.Center
-//            ) {
-//                Column() {
-//                    Text(
-//                        text = "з 00:30 до 04:30 (4 часа)"
-//                    )
-//                    Text(
-//                        text = "з 08:30 до 10:30 (2 часа)"
-//                    )
-//                    Text(
-//                        text = "з 15:00 до 16:30 (1.5 часа)"
-//                    )
-//                    Text(
-//                        text = "з 20:30 до 22:30 (2 часа)"
-//                    )
-//                }
-//            }
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                Column() {
+                    for (p in periodsWithElectricity.value) {
+                        val from = p.start.format(
+                            DateTimeFormatter.ofPattern("HH:mm")
+                        )
+
+                        val to = p.end.format(
+                            DateTimeFormatter.ofPattern("HH:mm")
+                        )
+
+                        val duration = Duration.between(p.start, p.end).toMinutes() / 60F
+
+                        Text(
+                            text = "з $from до $to ($duration часа)"
+                        )
+                    }
+                }
+            }
             PowerOutageDonutChartWidget(
                 todayDateTime = nowState.value,
-                todayChartSectors = todayChartSectors.value,
-                todayTotalShortages = todayTotalShortages.value
+                chartSectors = todayChartSectors.value,
+                totalShortages = todayTotalShortages.value
             )
             tomorrowChartSectors.value?.let {
                 Text(
@@ -81,8 +89,8 @@ fun Screen() {
                     textAlign = TextAlign.Center
                 )
                 PowerOutageDonutChartWidget(
-                    todayChartSectors = it,
-                    todayTotalShortages = tomorrowTotalShortages.value
+                    chartSectors = it,
+                    totalShortages = tomorrowTotalShortages.value
                 )
             }
         }

@@ -33,8 +33,8 @@ import kotlin.math.sin
 @Composable
 fun PowerOutageDonutChartWidget(
     todayDateTime: LocalDateTime? = null,
-    todayChartSectors: List<ChartSector>,
-    todayTotalShortages: Float
+    chartSectors: List<ChartSector>,
+    totalShortages: Float
 ) {
     Box(
         modifier = Modifier
@@ -43,7 +43,7 @@ fun PowerOutageDonutChartWidget(
         contentAlignment = Alignment.Center
     ) {
         DonutChart(
-            chartSectors = todayChartSectors,
+            chartSectors = chartSectors,
             textColor = Color.White
         )
         todayDateTime?.let {
@@ -71,12 +71,12 @@ fun PowerOutageDonutChartWidget(
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Text(
-                    text = "-${todayTotalShortages}",
+                    text = "-${totalShortages}",
                     color = Color.Red,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "+${24 - todayTotalShortages}",
+                    text = "+${24 - totalShortages}",
                     color = Color.Green,
                     fontWeight = FontWeight.Bold
                 )

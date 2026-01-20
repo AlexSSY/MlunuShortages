@@ -38,8 +38,8 @@ fun calculateChartSectorsFromSchedule(schedule: Schedule): List<ChartSector> {
         val startAngle = startHour * degreesPerHour - 90F
         val sweepAngle = sweepHours * degreesPerHour
         val color = when (slot.slotState) {
-            SlotState.GREEN -> Color.Green,
-            SlotState.YELLOW -> Color.Yellow,
+            SlotState.GREEN -> Color.Green
+            SlotState.YELLOW -> Color.Yellow
             SlotState.RED -> Color.Red
         }
 

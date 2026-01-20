@@ -2,6 +2,7 @@ package rx.dagger.mlunushortages.presentation
 
 import android.content.Context
 import android.util.Log
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.delay
@@ -61,6 +62,18 @@ class ShortagesViewModel(
             viewModelScope,
             SharingStarted.WhileSubscribed(5_000),
             LocalDateTime.now()
+        )
+
+    val periodsWithElectricity: StateFlow<List<PeriodWithElectricity>> =
+        combine(nowFlow, shortagesStateFlow) { now, shortages ->
+            runCatching {
+                calculatePeriodsWithElectricity(shortages.schedules.first())
+            }.getOrDefault(emptyList())
+
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = emptyList()
         )
 
     val todaySchedule: StateFlow<Schedule> =
@@ -124,7 +137,12 @@ class ShortagesViewModel(
             .map { slot ->
                 val startHour = 30F * slot.i
                 val endHour = startHour + 30F
-                ChartSector(startHour, endHour)
+                ChartSector(
+                    startHour, endHour,
+                    startAngle = 0F,
+                    sweepAngle = 0F,
+                    color = Color.White
+                )
             }
     }
 
