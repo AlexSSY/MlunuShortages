@@ -17,6 +17,7 @@ import rx.dagger.mlunushortages.domain.PeriodWithoutElectricity
 import rx.dagger.mlunushortages.domain.Repository
 import rx.dagger.mlunushortages.domain.Schedule
 import rx.dagger.mlunushortages.domain.Shortages
+import rx.dagger.mlunushortages.domain.Slot
 import rx.dagger.mlunushortages.domain.SlotState
 import rx.dagger.mlunushortages.infrastructure.AlarmScheduler
 import rx.dagger.mlunushortages.infrastructure.Notifier
@@ -166,8 +167,9 @@ class ShortagesViewModel(
         )
 
     val todayShortagesTotal: StateFlow<Float> =
-        combine(nowFlow, periodsWithoutElectricityStateFlow) { now, periods ->
-            calculateTodayShortages(now, periods)
+        combine(nowFlow, todaySchedule) { now, schedule ->
+//            calculateTodayShortages(now, periods)
+            calculateRedTime(schedule.slots)
         }.stateIn(
             viewModelScope,
             SharingStarted.WhileSubscribed(5_000),
@@ -175,9 +177,12 @@ class ShortagesViewModel(
         )
 
     val tomorrowShortagesTotal: StateFlow<Float> =
-        combine(nowFlow, periodsWithoutElectricityStateFlow) { now, periods ->
+        combine(nowFlow, tomorrowSchedule) { now, schedule ->
             val tomorrow = now.plusDays(1)
-            calculateTodayShortages(tomorrow, periods)
+//            calculateTodayShortages(tomorrow, periods)
+            schedule?.let {
+                calculateRedTime(it.slots)
+            } ?: 0F
         }.stateIn(
             viewModelScope,
             SharingStarted.WhileSubscribed(5_000),
@@ -227,6 +232,18 @@ class ShortagesViewModel(
         val totalHours = totalMinutes / 60F
 
         return totalHours
+    }
+
+    private fun calculateRedTime(slots: List<Slot>): Float {
+        var total = 0F
+
+        slots.forEach { slot ->
+            if (slot.slotState == SlotState.RED) {
+                total += .5F
+            }
+        }
+
+        return total
     }
 
     private fun calculateCurrentTimerState(now: LocalDateTime,
