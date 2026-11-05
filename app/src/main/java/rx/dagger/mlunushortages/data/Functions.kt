@@ -26,7 +26,7 @@ suspend fun downloadShortages(): ShortagesDto =
         ShortagesDto(isGav, schedules)
     }
 
-private fun downloadSchedules(): List<ScheduleDto> {
+private fun downloadSchedules(query: Float = 1.2f): List<ScheduleDto> {
     val document = getDocumentFromUrl()
 
     val schedules = mutableListOf<ScheduleDto>()
@@ -41,14 +41,15 @@ private fun downloadSchedules(): List<ScheduleDto> {
         val dateString = dateElement.text()
         val date = parseUaDate(dateString)
         val tr =
-            gpvDiv.selectFirst(".turnoff-scheduleui-table > tbody:nth-child(2) > tr:nth-child(2)")
+            gpvDiv.selectFirst(".gpv-table > tbody:nth-child(2) > tr:nth-child(2)")
         if (tr == null) {
             throw InvalidHtmlForParsing("Failed to parse tr")
         }
         val numbers = try {
-            tr.select("""td[class^="light_"]""").map { td ->
-                val firstClass = td.className().split(" ").first()
-                firstClass.split("light_").last().toInt()
+            tr.select("""td[class^="gpv-c"]""").map { td ->
+                val secondClass = td.className().split(" ")[1]
+                secondClass.removePrefix("gpv-s").toInt()
+//                secondClass.split("gpv_s").last().toInt()
             }
         } catch (e: NoSuchElementException) {
             throw InvalidHtmlForParsing("Failed to parse numbers", e)
