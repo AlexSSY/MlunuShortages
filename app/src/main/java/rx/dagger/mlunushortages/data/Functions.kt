@@ -26,7 +26,28 @@ suspend fun downloadShortages(): ShortagesDto =
         ShortagesDto(isGav, schedules)
     }
 
-private fun downloadSchedules(query: Float = 1.2f): List<ScheduleDto> {
+private fun downloadSchedules(query: Float = 6.1f): List<ScheduleDto> {
+    val queryToTr = mapOf(
+        1.1f to 1,
+        1.2f to 2,
+        2.1f to 3,
+        2.2f to 4,
+        3.1f to 5,
+        3.2f to 6,
+        4.1f to 7,
+        4.2f to 8,
+        5.1f to 9,
+        5.2f to 10,
+        6.1f to 11,
+        6.2f to 12
+    )
+
+    val trPosition = queryToTr[query]
+
+    if (trPosition == null) {
+        throw Exception("Invalid query")
+    }
+
     val document = getDocumentFromUrl()
 
     val schedules = mutableListOf<ScheduleDto>()
@@ -41,7 +62,7 @@ private fun downloadSchedules(query: Float = 1.2f): List<ScheduleDto> {
         val dateString = dateElement.text()
         val date = parseUaDate(dateString)
         val tr =
-            gpvDiv.selectFirst(".gpv-table > tbody:nth-child(2) > tr:nth-child(2)")
+            gpvDiv.selectFirst(".gpv-table > tbody:nth-child(2) > tr:nth-child($trPosition)")
         if (tr == null) {
             throw InvalidHtmlForParsing("Failed to parse tr")
         }
